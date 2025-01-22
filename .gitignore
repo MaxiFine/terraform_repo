@@ -1,0 +1,4 @@
+# BEST PRACTICES FOR TERRAFORM PROJECTS
+.terraform/
+*.tfstate
+*.tfstate.backup
