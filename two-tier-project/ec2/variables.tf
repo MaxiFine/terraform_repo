@@ -24,3 +24,10 @@ variable "aws_region" {
   default     = "eu-west-1"
 
 }
+
+variable "ami_id" {}
+variable "instance_type" {}
+variable "public_subnets" { type = list(string) }
+variable "security_group_id" {}
+variable "instance_count" {}
+variable "instance_name" {}
