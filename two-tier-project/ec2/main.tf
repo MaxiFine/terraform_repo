@@ -5,6 +5,5 @@ resource "aws_instance" "app_server" {
     subnet_id    = aws_subnet.subnet.id
     tags = {
         Name = var.instance_name
-    }
-  
+    } 
 }

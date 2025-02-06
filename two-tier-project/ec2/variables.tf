@@ -5,14 +5,12 @@ variable "instance_name" {
 
 }
 
-
 variable "instance_type" {
   description = "value of the instance type"
   type        = string
   default     = "t2.micro"
 
 }
-
 variable "ami" {
   description = "value of the ami"
   type        = string
