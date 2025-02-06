@@ -1,6 +1,7 @@
 terraform {
 
-    backend "mx-devops-consult" {
+    backend "remote" {
+        organization = "mx-devops-consults"
         workspaces {
             name = "terra-01"
         }
