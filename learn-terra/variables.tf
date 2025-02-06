@@ -16,7 +16,7 @@ variable "instance_type" {
 variable "ami" {
     description = "value of the ami"
     type = string
-    default = "ami-0c55b159cbfafe1f0"   
+    default = "ami-03fd334507439f4d1"    # Ubuntu 20.04 LTS // us-east-1
   
 }
 

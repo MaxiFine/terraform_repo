@@ -10,15 +10,15 @@ terraform {
 }
 
 provider "aws" {
-  region = "eu-west-1"
+  region = var.aws_region
   
 }
 
-resource "aws_instance" "max_server" {
-  ami = "ami-0c55b159cbfafe1f0"
-  instance_type = "t2.micro"
+resource "aws_instance" "app_server" {
+  ami = var.ami
+  instance_type = var.instance_type
   tags = {
-    Name = "max_server_tera"
+    Name = var.instance_name
   }
   
 }
