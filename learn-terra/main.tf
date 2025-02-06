@@ -1,4 +1,11 @@
 terraform {
+
+    backend "mx-devops-consult" {
+        workspaces {
+            name = "terra-01"
+        }
+      
+    }
   required_providers {
     aws = {
       source  = "hashicorp/aws"
