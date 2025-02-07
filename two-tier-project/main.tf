@@ -37,5 +37,5 @@ module "asg" {
 
 module "route53" {
   source  = "./modules/route53"
-  zone_id = "ZXXXXXXXXXX"
+  zone_id = local.dns_zone_id
 }
