@@ -16,11 +16,11 @@ output "vpc_cidr" {
   
 }
 
-output "aws_vpc_main" {
-  description = "value of the vpc main"
-  value       = aws_vpc.main
+# output "aws_vpc_main" {
+#   description = "value of the vpc main"
+#   value       = aws_vpc.main
   
-}
+# }
 
 output "aws_subnet_ids" {
   description = "value of the subnet ids"

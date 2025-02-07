@@ -4,8 +4,8 @@ output "aws_security_group" {
   
 }
 
-output "aws_security_group" {
-  description = "value of the rds security group id"
-  value       = aws_security_group.rds_sg.id
+# output "aws_security_group" {
+#   description = "value of the rds security group id"
+#   value       = aws_security_group.rds_sg.id
   
-}
+# }

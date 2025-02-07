@@ -1,6 +1,6 @@
-resource "aws_route53_record" "www" {
+resource "aws_route53_record" "primary" {
   zone_id = var.zone_id
-  name    = "mywebsite.com"
+  name    = "mxwebsite.com"
   type    = "A"
   alias {
     name                   = aws_lb.alb.dns_name
