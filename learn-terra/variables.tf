@@ -1,4 +1,4 @@
-variable "instance_name" {
+variable "instance_name"{
   description = "value of the instance name"
   type        = string
   default     = "max_server_tera"
