@@ -21,6 +21,8 @@ resource "aws_s3_bucket" "mx-bucket" {
 
 }
 
+
+
 # S3 BUCKET ACCESS CONFIGURATION
 resource "aws_s3_bucket_public_access_block" "mx-bucket" {
   bucket = aws_s3_bucket.mx-bucket.id
@@ -31,9 +33,27 @@ resource "aws_s3_bucket_public_access_block" "mx-bucket" {
 }
 
 
+resource "aws_s3_bucket_object" "index" {
+  bucket = aws_s3_bucket.mx-bucket.id
+  key    = "index.html"
+#   source = "C:/Users/MaxwellAdomako/terraforms/lab-work-2/error.html"
+
+  source =  "${path.module}/index.html" # Replace with the actual path to your index.html file
+  content_type = "text/html"
+}
+
+resource "aws_s3_bucket_object" "error" {
+  bucket = aws_s3_bucket.mx-bucket.id
+  key    = "error.html"
+  source = "${path.module}/error.html"  # Replace with the actual path to your index.html file
+  content_type = "text/html"
+}
+
+
+
 # S3 Static Website Hosting Configurations
 
-resource "aws_s3_bucket_website_configuration" "bucket1" {
+resource "aws_s3_bucket_website_configuration" "mx-bucket" {
   bucket = aws_s3_bucket.mx-bucket.id
   index_document {
     suffix = "index.html"
@@ -51,7 +71,7 @@ resource "aws_s3_bucket_policy" "public_read_access" {
     {
       "Effect": "Allow",
    "Principal": "*",
-      "Action": [ "s3:GetObject" ],
+      "Action": [ "s3:GetObject"],
       "Resource": [
         "${aws_s3_bucket.mx-bucket.arn}",
         "${aws_s3_bucket.mx-bucket.arn}/*"
