@@ -9,3 +9,10 @@ output "instance_2_ip_addr" {
 output "db_instance_addr" {
   value = aws_db_instance.db_instance.address
 }
+
+output "aws_route53_record" {
+  # value = aws_route53_record.root.fqdn
+  value = aws_route53_record.root.name
+  # value = aws_route53_record.root.zone_id
+  
+}

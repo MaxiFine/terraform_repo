@@ -20,7 +20,7 @@ provider "aws" {
 }
 
 locals {
-  extra_tag = "extra-tag"
+  extra_tag = "local-vraible-type"
 }
 
 resource "aws_instance" "instance" {
