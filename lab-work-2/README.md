@@ -129,6 +129,12 @@ This Terraform project accomplishes the following:
 - **Permissions and Access Denied:**  
   Ensure your AWS IAM user/role has the necessary permissions to create and manage S3 resources and apply bucket policies.
 
+- **HOW TO ACCESS THE INDEX AND ERROR PAGE**
+    in my case::
+    ```https://mx-lab-bucket.s3.eu-west-1.amazonaws.com/index.html```
+    ```https://mx-lab-bucket.s3.eu-west-1.amazonaws.com/error.html```
+
+
 ## Cleanup
 
 To remove all resources created by Terraform, run:
