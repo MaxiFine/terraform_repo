@@ -20,14 +20,14 @@ resource "aws_s3_bucket_object" "index" {
   key    = "index.html"
 #   source = "C:/Users/MaxwellAdomako/terraforms/lab-work-2/error.html"
 
-  source =  "${path.module}/index.html" 
+  source =  "${path.root}/index.html" 
   content_type = "text/html"
 }
 
 resource "aws_s3_bucket_object" "error" {
   bucket = aws_s3_bucket.mx-bucket.id
   key    = "error.html"
-  source = "${path.module}/error.html" 
+  source = "${path.root}/error.html" 
   content_type = "text/html"
 }
 
