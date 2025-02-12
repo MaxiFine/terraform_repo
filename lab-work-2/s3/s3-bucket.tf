@@ -31,6 +31,13 @@ resource "aws_s3_bucket_object" "error" {
   content_type = "text/html"
 }
 
+resource "aws_s3_bucket_object" "about" {
+  bucket = aws_s3_bucket.mx-bucket.id
+  key    = "about.html"
+  source = "${path.root}/about.html" 
+  content_type = "text/html"
+}
+
 # S3 Static Website Hosting Configurations
 resource "aws_s3_bucket_website_configuration" "mx-bucket" {
   bucket = aws_s3_bucket.mx-bucket.id
