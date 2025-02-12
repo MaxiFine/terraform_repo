@@ -1,27 +1,21 @@
 terraform {
-
     required_providers {
         aws = {
             source  = "hashicorp/aws"
             version = "~> 3.0"
         }
     }
-  
 }
-
 
 provider "aws" {
   region = var.aws_region
 }
 
-
 #   S3 BUCKET CREATION
 resource "aws_s3_bucket" "mx-bucket" {
-    bucket = "mx-lab-bucket"
+    bucket = var.bucket_name
 
 }
-
-
 
 # S3 BUCKET ACCESS CONFIGURATION
 resource "aws_s3_bucket_public_access_block" "mx-bucket" {
@@ -32,27 +26,24 @@ resource "aws_s3_bucket_public_access_block" "mx-bucket" {
   restrict_public_buckets = false
 }
 
-
+# Puting Object into s3
 resource "aws_s3_bucket_object" "index" {
   bucket = aws_s3_bucket.mx-bucket.id
   key    = "index.html"
 #   source = "C:/Users/MaxwellAdomako/terraforms/lab-work-2/error.html"
 
-  source =  "${path.module}/index.html" # Replace with the actual path to your index.html file
+  source =  "${path.module}/index.html" 
   content_type = "text/html"
 }
 
 resource "aws_s3_bucket_object" "error" {
   bucket = aws_s3_bucket.mx-bucket.id
   key    = "error.html"
-  source = "${path.module}/error.html"  # Replace with the actual path to your index.html file
+  source = "${path.module}/error.html" 
   content_type = "text/html"
 }
 
-
-
 # S3 Static Website Hosting Configurations
-
 resource "aws_s3_bucket_website_configuration" "mx-bucket" {
   bucket = aws_s3_bucket.mx-bucket.id
   index_document {
