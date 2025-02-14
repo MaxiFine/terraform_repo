@@ -11,3 +11,4 @@ variable "bucket_name" {
     default = "mx-lab-bucket"
   
 }
+
