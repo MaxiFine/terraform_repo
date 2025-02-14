@@ -17,6 +17,7 @@ This project demonstrates how to use Terraform to provision an AWS S3 bucket con
 ## Overview
 
 This Terraform project accomplishes the following:
+
 - **Creates an S3 Bucket:** Provisions an S3 bucket (with a unique name) in AWS.
 - **Configures Website Hosting:** Sets up the bucket for static website hosting by specifying an index and error document.
 - **Applies Bucket Policies:** Applies a policy to allow public read access (and optionally, write access) to the bucket’s objects.
@@ -33,12 +34,12 @@ This Terraform project accomplishes the following:
 ## Project Structure
 
 ```
-├── main.tf          # Main Terraform configuration (S3 bucket, bucket policy, S3 objects)
-├── outputs.tf       # Outputs the website endpoint URL
-├── variables.tf     # Variable definitions (e.g., AWS region)
-├── index.html       # Static website index page
-├── error.html       # Static website error page
-└── README.md        # This file
+    ├── main.tf          # Main Terraform configuration (S3 bucket, bucket policy, S3 objects)
+    ├── outputs.tf       # Outputs the website endpoint URL
+    ├── variables.tf     # Variable definitions (e.g., AWS region)
+    ├── index.html       # Static website index page
+    ├── error.html       # Static website error page
+    └── README.md        # This file
 ```
 
 ## Setup Instructions
@@ -108,11 +109,13 @@ This Terraform project accomplishes the following:
 
 - **Output:**  
   The output value uses the (non-deprecated) `website_domain` attribute to provide the website endpoint:
+
   ```
-  output "website_endpoint" {
+    output "website_endpoint" {
     value = aws_s3_bucket.mx-bucket.website_domain
   }
   ```
+
   Once applied, this endpoint URL can be opened in a browser to view your static website.
 
 ## Troubleshooting
