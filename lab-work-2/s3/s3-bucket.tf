@@ -15,26 +15,10 @@ resource "aws_s3_bucket_public_access_block" "mx-bucket" {
 }
 
 # Puting Object into s3 REDUNDANT CODES
-# resource "aws_s3_bucket_object" "index" {
-#   bucket = aws_s3_bucket.mx-bucket.id
-#   key    = "index.html"
-# #   source = "C:/Users/MaxwellAdomako/terraforms/lab-work-2/error.html"
-
-#   source =  "${path.root}/index.html" 
-#   content_type = "text/html"
-# }
-
 # resource "aws_s3_bucket_object" "error" {
 #   bucket = aws_s3_bucket.mx-bucket.id
 #   key    = "error.html"
 #   source = "${path.root}/error.html" 
-#   content_type = "text/html"
-# }
-
-# resource "aws_s3_bucket_object" "about" {
-#   bucket = aws_s3_bucket.mx-bucket.id
-#   key    = "about.html"
-#   source = "${path.root}/about.html" 
 #   content_type = "text/html"
 # }
 
