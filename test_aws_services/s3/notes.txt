@@ -1,0 +1,195 @@
+aws s3api head-object \
+  --bucket $(terraform output -raw origin_bucket) \
+  --key test.txt \
+  --query 'ReplicationStatus'
+
+
+  aws s3 cp test.txt s3://$(terraform output -raw origin_bucket)/
+
+
+
+  ############################
+  #err
+  # main.tf
+provider "aws" {
+  region = "eu-west-1"  # Origin region (Ireland)
+
+  skip_metadata_api_check     = true
+  skip_region_validation      = true
+  skip_credentials_validation = true
+}
+
+provider "aws" {
+  alias   = "replica"
+  region  = "eu-central-1"  # Replica region (Frankfurt)
+
+  skip_metadata_api_check     = true
+  skip_region_validation      = true
+  skip_credentials_validation = true
+}
+
+locals {
+  origin_bucket_name   = "origin-bucket-${random_pet.this.id}"
+  replica_bucket_name  = "replica-bucket-${random_pet.this.id}"
+}
+
+resource "random_pet" "this" {
+  length = 2
+}
+
+data "aws_caller_identity" "current" {}
+
+#-----------------------------
+# Replica Bucket (Frankfurt)
+#-----------------------------
+resource "aws_s3_bucket" "replica" {
+  provider = aws.replica
+  bucket   = local.replica_bucket_name
+
+  versioning {
+    enabled = true
+  }
+}
+
+#-----------------------------
+# KMS Key (Replica Region)
+#-----------------------------
+resource "aws_kms_key" "replica" {
+  provider = aws.replica
+
+  description             = "S3 Replica Bucket KMS Key"
+  deletion_window_in_days = 7
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Id      = "s3-replication-key",
+    Statement = [
+      {
+        Sid    = "EnableReplicationRole",
+        Effect = "Allow",
+        Principal = {
+          AWS = aws_iam_role.replication.arn
+        },
+        Action = [
+          "kms:Encrypt",
+          "kms:Decrypt",
+          "kms:GenerateDataKey*"
+        ],
+        Resource = "*"
+      },
+      {
+        Sid    = "AllowRootAccess",
+        Effect = "Allow",
+        Principal = {
+          AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"
+        },
+        Action = "kms:*",
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+#-----------------------------
+# Origin Bucket (Ireland)
+#-----------------------------
+resource "aws_s3_bucket" "origin" {
+  bucket = local.origin_bucket_name
+
+  versioning {
+    enabled = true
+  }
+
+  replication_configuration {
+    role = aws_iam_role.replication.arn
+
+    rules {
+      id       = "full-replication"
+      status   = "Enabled"
+      priority = 10
+
+      filter {}
+
+      destination {
+        bucket        = aws_s3_bucket.replica.arn
+        storage_class = "STANDARD"
+        replica_kms_key_id = aws_kms_key.replica.arn  # Critical KMS reference
+
+        access_control_translation {
+          owner = "Destination"
+        }
+      }
+    }
+  }
+
+  depends_on = [aws_iam_role_policy_attachment.replication]
+}
+
+#-----------------------------
+# IAM Role & Policy (FIXED)
+#-----------------------------
+resource "aws_iam_role" "replication" {
+  name = "s3-replication-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [{
+      Action = "sts:AssumeRole",
+      Effect = "Allow",
+      Principal = {
+        Service = "s3.amazonaws.com"
+      }
+    }]
+  })
+}
+
+resource "aws_iam_policy" "replication" {
+  name = "s3-replication-policy"
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Action = [
+          "s3:GetReplicationConfiguration",
+          "s3:ListBucket",
+          "s3:GetObjectVersion",
+          "s3:ReplicateObject",
+          "s3:ReplicateDelete",
+          "s3:ReplicateTags"
+        ],
+        Effect   = "Allow",
+        Resource = "*"
+      },
+      {
+        Action = [
+          "kms:Decrypt",
+          "kms:Encrypt",
+          "kms:GenerateDataKey*"
+        ],
+        Effect   = "Allow",
+        Resource = aws_kms_key.replica.arn
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "replication" {
+  role       = aws_iam_role.replication.name
+  policy_arn = aws_iam_policy.replication.arn
+}
+
+#-----------------------------
+# Outputs
+#-----------------------------
+output "origin_bucket" {
+  value = aws_s3_bucket.origin.bucket
+}
+
+output "replica_bucket" {
+  value = aws_s3_bucket.replica.bucket
+}
+
+output "replica_kms_key_arn" {
+  value = aws_kms_key.replica.arn
+}

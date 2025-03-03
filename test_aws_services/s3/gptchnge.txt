@@ -1,0 +1,284 @@
+
+# ###################
+# ## new fix testing
+# ###################
+
+# provider "aws" {
+#   region = "eu-west-1"  # Origin region (e.g., Ireland)
+
+#   skip_metadata_api_check     = true
+#   skip_region_validation      = true
+#   skip_credentials_validation = true
+# }
+
+# provider "aws" {
+#   alias   = "replica"
+#   region  = "eu-central-1"  # Replica region (e.g., Frankfurt)
+
+#   skip_metadata_api_check     = true
+#   skip_region_validation      = true
+#   skip_credentials_validation = true
+# }
+
+# locals {
+#   origin_bucket_name   = "origin-bucket-${random_pet.this.id}"
+#   replica_bucket_name  = "replica-bucket-${random_pet.this.id}"
+# }
+
+# resource "random_pet" "this" {
+#   length = 2
+# }
+
+# #---------------------------
+# # Replica Bucket (Frankfurt)
+# #---------------------------
+# resource "aws_s3_bucket" "replica" {
+#   provider = aws.replica
+#   bucket   = local.replica_bucket_name
+
+#   versioning {
+#     enabled = true  # Required for replication
+#   }
+# }
+
+# #---------------------------
+# # Origin Bucket (Ireland)
+# #---------------------------
+# resource "aws_s3_bucket" "origin" {
+#   bucket = local.origin_bucket_name
+
+#   versioning {
+#     enabled = true
+#   }
+
+#   replication_configuration {
+#     role = aws_iam_role.replication.arn
+
+#     rules {
+#       id       = "full-replication"
+#       status   = "Enabled"
+#       priority = 10
+
+#       filter {}  # Replicate all objects
+
+#       destination {
+#         bucket        = aws_s3_bucket.replica.arn
+#         storage_class = "STANDARD"
+#       }
+#     }
+#   }
+
+#   depends_on = [aws_iam_role_policy_attachment.replication]
+# }
+
+# #---------------------------
+# # KMS Key (Replica Region)
+# #---------------------------
+# resource "aws_kms_key" "replica" {
+#   provider = aws.replica
+
+#   description             = "S3 Replica Bucket KMS Key"
+#   deletion_window_in_days = 7
+# }
+
+# #---------------------------
+# # IAM Role & Policy
+# #---------------------------
+# resource "aws_iam_role" "replication" {
+#   name = "s3-replication-role"
+
+#   assume_role_policy = jsonencode({
+#     Version = "2012-10-17",
+#     Statement = [{
+#       Action = "sts:AssumeRole",
+#       Effect = "Allow",
+#       Principal = {
+#         Service = "s3.amazonaws.com"
+#       }
+#     }]
+#   })
+# }
+
+# resource "aws_iam_policy" "replication" {
+#   name = "s3-replication-policy"
+
+#   policy = jsonencode({
+#     Version = "2012-10-17",
+#     Statement = [
+#       {
+#         Action = [
+#           "s3:GetReplicationConfiguration",
+#           "s3:ListBucket",
+#           "s3:GetObjectVersion",
+#           "s3:ReplicateObject",
+#           "s3:ReplicateDelete",
+#           "s3:ReplicateTags"
+#         ],
+#         Effect   = "Allow",
+#         Resource = "*"
+#       }
+#     ]
+#   })
+# }
+
+# resource "aws_iam_role_policy_attachment" "replication" {
+#   role       = aws_iam_role.replication.name
+#   policy_arn = aws_iam_policy.replication.arn
+# }
+
+
+
+
+# gpt fix
+
+#################
+## PROVIDERS
+#################
+provider "aws" {
+  region = "eu-west-1"   # Source region
+}
+
+provider "aws" {
+  alias  = "destination"
+  region = "eu-central-1"  # Destination region
+}
+
+#################
+## SOURCE BUCKET (eu-west-1)
+#################
+resource "aws_s3_bucket" "source_buck" {
+  provider      = aws
+  bucket        = "source-2022"
+#   acl           = "private"
+  force_destroy = false
+
+  tags = {
+    Name        = "source-2022"
+    Environment = "Production"
+  }
+}
+
+resource "aws_s3_bucket_versioning" "source_versioning" {
+  provider = aws
+  bucket   = aws_s3_bucket.source_buck.arn
+
+  versioning_configuration {
+    status    = "Enabled"
+    mfa_delete = "Enabled"
+  }
+}
+
+#################
+## DESTINATION BUCKET (eu-central-1)
+#################
+resource "aws_s3_bucket" "destination" {
+  provider      = aws.destination
+  bucket        = "replica-2022"
+#   acl           = "private"
+  force_destroy = false
+
+  tags = {
+    Name        = "replica-2022"
+    Environment = "Production"
+  }
+}
+
+resource "aws_s3_bucket_versioning" "dest_versioning" {
+  provider = aws.destination
+  bucket   = aws_s3_bucket.destination.bucket
+
+  versioning_configuration {
+    status    = "Enabled"
+    mfa_delete = "Enabled"
+  }
+}
+
+#################
+## IAM ROLE & POLICY FOR REPLICATION
+#################
+resource "aws_iam_role" "source_replication" {
+  name = "tf-my-replication-name-replication-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Sid = "",
+        Effect = "Allow",
+        Principal = {
+          Service = "s3.amazonaws.com"
+        },
+        Action = "sts:AssumeRole"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_policy" "source_replication" {
+  name        = "tf-my-replication-name-replication-policy"
+  description = "Allows S3 to replicate objects"
+  policy      = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Sid    = "AllowSourcePermissions",
+        Effect = "Allow",
+        Action = [
+          "s3:ListBucket",
+          "s3:GetReplicationConfiguration",
+          "s3:GetObject"
+        ],
+        Resource = [
+          "arn:aws:s3:::${aws_s3_bucket.source_buck.arn}",
+          "arn:aws:s3:::${aws_s3_bucket.source_buck.arn}/*"
+        ]
+      },
+      {
+        Sid    = "AllowDestinationPermissions",
+        Effect = "Allow",
+        Action = [
+          "s3:ReplicateObject",
+          "s3:ReplicateDelete",
+          "s3:ReplicateTags"
+        ],
+        Resource = "arn:aws:s3:::${aws_s3_bucket.destination.bucket}/*"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "source_replication_attachment" {
+  role       = aws_iam_role.source_replication.name
+  policy_arn = aws_iam_policy.source_replication.arn
+}
+
+#################
+## S3 BUCKET REPLICATION CONFIGURATION
+#################
+resource "aws_s3_bucket_replication_configuration" "replication_config" {
+  bucket = aws_s3_bucket.source_buck.arn
+  role   = aws_iam_role.source_replication.arn
+
+  rule {
+    id       = "tf-my-replication-name"
+    priority = 0
+    status   = "Enabled"
+
+    filter {
+      prefix = ""
+    }
+
+    delete_marker_replication {
+      status = "Enabled"
+    }
+
+    destination {
+      bucket        = aws_s3_bucket.destination.arn
+      storage_class = "STANDARD"
+      access_control_translation {
+        owner = "Destination"
+      }
+    }
+  }
+}
+
