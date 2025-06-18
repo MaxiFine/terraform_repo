@@ -33,9 +33,3 @@ output "nat_gateway_id" {
   value       = module.networking.nat_gateway_id
   
 }
-
-output "nat_ip" {
-  description = "The NAT Gateway Elastic IP"
-  value       = module.networking.nat_ip
-  
-}
