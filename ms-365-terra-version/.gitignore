@@ -1,0 +1,46 @@
+# # BEST PRACTICES FOR TERRAFORM PROJECTS
+# .terraform/
+# *.tfstate
+# *.tfstate.backup
+# *.terraform*
+# *.tfstate*
+# *.log
+# # .terraform.lock.hcl
+# .terraform/*
+
+# # Terraform files
+# *.tfstate
+# *.tfstate.backup
+# .terraform/
+# # .terraform.lock.hcl
+# terraform.tfvars
+# terraform.tfvars.json
+
+# # Ignore secrets and credentials
+# *.pem
+# *.key
+# .env
+
+# # System files
+# .DS_Store
+# Thumbs.db
+# desktop.ini
+
+# # Logs & temp files
+# *.log
+# *.bak
+# *.swp
+# *.tmp
+# .terraform/*
+# .terraform
+
+# .gitignore
+# Terraform files
+.terraform/
+*.tfstate
+*.tfstate.backup
+.terraform.lock.hcl
+*.tfstate.lock.info
+terraform.tfstate.*.backup
+tfkey
+.terraform/*
