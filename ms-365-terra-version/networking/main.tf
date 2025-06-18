@@ -66,6 +66,11 @@ resource "aws_route_table_association" "public_route_table_association" {
 resource "aws_route_table" "private_route_table" {
   vpc_id = aws_vpc.mx-vpc.id
 
+  route = {
+    cidr_block     = "0.0.0.0/0"
+    nat_gateway_id = aws_nat_gateway.mx_nat_gateway.id
+  }
+
   tags = {
     Name        = "Private Route Table"
     Environment = "Development"
@@ -98,10 +103,4 @@ resource "aws_nat_gateway" "mx_nat_gateway" {
     Name        = "MxProject-NAT-Gateway"
     Environment = "Development"
   }
-}
-
-resource "aws_route_table_association" "nat_route_association" {
-  subnet_id      = aws_subnet.private_subnet.id
-  route_table_id = aws_route_table.private_route_table.id
-  
 }
