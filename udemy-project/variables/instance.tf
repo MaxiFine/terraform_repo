@@ -7,6 +7,7 @@ resource "aws_key_pair" "levelup_key" {
 
 resource "aws_instance" "web_server" {
     # ami           = var.amis[var.aws_region]
+    count = 2
     ami           = lookup(var.amis, var.aws_region)
     instance_type = "t2.micro"
     key_name      = aws_key_pair.levelup_key.key_name
