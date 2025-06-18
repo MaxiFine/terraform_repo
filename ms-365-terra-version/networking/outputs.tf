@@ -1,6 +1,6 @@
 output "vpc_id" {
   description = "value for the VPC ID"
-  value       = aws_vpc.vpc.id
+  value       = aws_vpc.mx-vpc.id
 }
 
 output "public_subnet_id" {
@@ -41,5 +41,6 @@ output "aws_private_subnet" {
 
 output "mx_internet_gateway" {
   description = "The Internet Gateway ID"
-  value       = aws_internet_gateway.mx_internet_gateway.id
+#   value       = aws_internet_gateway.mx_internet_gateway.id
+    value       = aws_internet_gateway.mx-internet-gateway.id
 }
