@@ -1,6 +1,3 @@
-
-
-
 resource "aws_vpc" "mx-vpc" {
   cidr_block           = var.aws_vpc_cidr
   enable_dns_support   = true
@@ -26,7 +23,7 @@ resource "aws_subnet" "public_subnet" {
 }
 
 resource "aws_subnet" "private_subnet" {
-  vpc_id            = aws_vpc.vpc.id
+  vpc_id            = aws_vpc.mx-vpc.id
   cidr_block        = var.private_subnet_cidr
   availability_zone = "${var.aws_region_short}a"
 
@@ -38,7 +35,8 @@ resource "aws_subnet" "private_subnet" {
 
 
 resource "aws_internet_gateway" "mx-internet-gateway" {
-  vpc_id = aws_vpc.vpc.id
+  vpc_id = aws_vpc.mx-vpc.id
+  # The internet gateway is used to allow communication between the VPC and the internet
 
   tags = {
     Name        = "mx-project-internet-gateway"
