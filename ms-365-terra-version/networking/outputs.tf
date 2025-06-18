@@ -44,3 +44,8 @@ output "mx_internet_gateway" {
 #   value       = aws_internet_gateway.mx_internet_gateway.id
     value       = aws_internet_gateway.mx-internet-gateway.id
 }
+
+output "mx_nat_gateway" {
+  description = "The NAT Gateway ID"
+  value       = aws_nat_gateway.mx_nat_gateway.public_ip
+}
