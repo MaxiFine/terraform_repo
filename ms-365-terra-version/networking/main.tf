@@ -79,3 +79,25 @@ resource "aws_route_table_association" "private_route_table_association" {
     subnet_id      = aws_subnet.private_subnet.id
     route_table_id = aws_route_table.private_route_table.id
 }
+
+
+resource "aws_eip" "mx_eip_nat" {
+#   vpc = true
+  domain = "vpc"
+
+  tags = {
+    Name = "MxProject-NAT-EIP"
+    Environment = "Development"
+  }
+  
+}
+
+resource "aws_nat_gateway" "mx_nat_gateway" {
+  allocation_id = aws_eip.mx_eip_nat.id
+  subnet_id    = aws_subnet.public_subnet.id
+
+  tags = {
+    Name        = "MxProject-NAT-Gateway"
+    Environment = "Development"
+  }
+}
