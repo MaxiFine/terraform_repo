@@ -15,3 +15,8 @@ module "networking" {
   source = "./networking"
    
 }
+
+module "security_groups" {
+  source = "./security-groups"
+  vpc_id = module.networking.vpc_id
+}
