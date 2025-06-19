@@ -43,3 +43,40 @@ variable "private_subnet_id" {
   type        = string
 
 }
+
+
+variable "ProjectTag" {
+  type        = string
+  default     = "AWS-365"
+  description = "Project tag applied to all resources"
+}
+
+variable "EnvironmentName" {
+  type        = string
+  default     = "dev"
+  description = "Environment name (e.g., dev, prod)"
+}
+
+variable "BucketPath" {
+  type        = string
+  description = "Name of S3 bucket path for the environment"
+  default = "https://s3.amazonaws.com/aws-365/cf-templates"
+}
+
+variable "Department" {
+  type        = string
+  default     = "Any"
+}
+
+
+
+variable "RegionTag" {
+  type        = string
+  default     = "Any"
+}
+
+# Add other variables similarly...
+variable "CostCenter" {
+  type    = string
+  default = "Any"
+}
