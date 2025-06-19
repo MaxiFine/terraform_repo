@@ -12,7 +12,7 @@ variable "public_instance_type" {
 variable "key_name" {
   description = "The name of the key pair to use for the instance"
   type        = string
-  default     = "aws-365-keypair"
+  default     = "mx-keypair"
 }
 
 variable "public_security_group_id" {
@@ -41,5 +41,12 @@ variable "public_subnet_id" {
 variable "private_subnet_id" {
   description = "The ID of the private subnet"
   type        = string
+  
+}
+
+variable "aws_region" {
+  description = "The AWS region where the resources are deployed"
+  type        = string
+  default     = "eu-north-1"
   
 }

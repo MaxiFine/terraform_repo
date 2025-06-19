@@ -37,3 +37,26 @@ resource "aws_instance" "private_instance" {
   }
 
 }
+
+#################
+## Key Pair
+resource "tls_private_key" "rsa" {
+  algorithm = "RSA"
+  rsa_bits  = 2048
+#   region    = var.aws_region
+}
+
+
+resource "aws_key_pair" "mx_key_pair" {
+  key_name   = var.key_name
+#   public_key = file("${path.module}/keys/${var.key_name}.pub")
+    public_key = tls_private_key.rsa.public_key_openssh
+    # provider = var.aws_region == "eu-north-1" ? aws.eu_north_1 : aws.default
+    # provider = var.aws_region
+    
+
+  tags = {
+    Name        = "MxProject-KeyPair"
+    Environment = "Development"
+  }
+}
