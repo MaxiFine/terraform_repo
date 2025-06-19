@@ -29,24 +29,17 @@ variable "aws_region" {
 variable "private_security_group_id" {
   description = "The ID of the private security group"
   type        = string
-  
+
 }
 
 variable "public_subnet_id" {
   description = "The ID of the public subnet"
   type        = string
-  
+
 }
 
 variable "private_subnet_id" {
   description = "The ID of the private subnet"
   type        = string
-  
-}
 
-variable "aws_region" {
-  description = "The AWS region where the resources are deployed"
-  type        = string
-  default     = "eu-north-1"
-  
 }
