@@ -12,17 +12,17 @@ provider "aws" {
 }
 
 module "networking" {
-  source = "./networking"
+  source = "./module/networking"
    
 }
 
 module "security_groups" {
-  source = "./security-groups"
+  source = "./module/security-groups"
   vpc_id = module.networking.vpc_id
 }
 
 module "compute" {
-  source = "./compute"
+  source = "./module/compute"
   public_security_group_id = module.security_groups.public_security_group_id
   private_security_group_id = module.security_groups.private_security_group_id  
   public_subnet_id = module.networking.public_subnet_id
