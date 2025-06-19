@@ -26,3 +26,9 @@ output "private_instance_public_ip" {
   value       = aws_instance.private_instance.public_ip
   
 }
+
+output "private_instance_arn" {
+  description = "The ARN of the private EC2 instance"
+  value       = aws_instance.private_instance.arn
+  
+}

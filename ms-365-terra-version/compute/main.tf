@@ -14,7 +14,7 @@ resource "aws_instance" "public_instance" {
 
 
   tags = {
-    Name        = "Public Instance"
+    Name        = "Public|Instance"
     Environment = "Development"
   }
 
@@ -32,7 +32,7 @@ resource "aws_instance" "private_instance" {
 
 
   tags = {
-    Name        = "Public Instance"
+    Name        = "Private|Instance"
     Environment = "Development"
   }
 
