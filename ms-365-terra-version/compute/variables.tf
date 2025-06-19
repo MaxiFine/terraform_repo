@@ -1,7 +1,7 @@
-variable "public_ami_id" {
-  description = "The AMI ID for the public instance"
-  type        = string
-}
+# variable "public_ami_id" {
+#   description = "The AMI ID for the public instance"
+#   type        = string
+# }
 
 variable "public_instance_type" {
   description = "The instance type for the public instance"
@@ -12,6 +12,7 @@ variable "public_instance_type" {
 variable "key_name" {
   description = "The name of the key pair to use for the instance"
   type        = string
+  default     = "aws-365-keypair"
 }
 
 variable "public_security_group_id" {
