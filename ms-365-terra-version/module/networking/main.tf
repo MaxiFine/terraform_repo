@@ -1,3 +1,7 @@
+data "aws_availability_zones" "available" {
+  state = "available"
+}
+
 resource "aws_vpc" "mx-vpc" {
   cidr_block           = var.aws_vpc_cidr
   enable_dns_support   = true
@@ -14,7 +18,9 @@ resource "aws_subnet" "public_subnet" {
   vpc_id               = aws_vpc.mx-vpc.id
   cidr_block           = var.public_subnet_cidr
   # more dynamic availability zones can be added if needed
-  availability_zone    = "${var.aws_region_short}a"
+  # availability_zone    = "${var.aws_region_short}a"
+  availability_zone    = data.aws_availability_zones.available.names[0]
+
   map_public_ip_on_launch = true
 
   tags = {
@@ -25,7 +31,8 @@ resource "aws_subnet" "public_subnet" {
 resource "aws_subnet" "private_subnet" {
   vpc_id            = aws_vpc.mx-vpc.id
   cidr_block        = var.private_subnet_cidr
-  availability_zone = "${var.aws_region_short}a"
+  # availability_zone = "${var.aws_region_short}a"
+  availability_zone = data.aws_availability_zones.available.names[0]
 
   tags = {
     Name        = "Private Subnet | 1"
