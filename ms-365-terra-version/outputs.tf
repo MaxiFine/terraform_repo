@@ -63,17 +63,27 @@ output "public_instance_id" {
   value       = module.compute.public_instance_id
 }
 
+# output "public_instance_public_ip" {
+#   description = "The public IP address of the public EC2 instance"
+#   value       = module.compute.public_instance_public_ip
+# }
+
+output "public_instance_arn" {
+  description = "The ARN of the public EC2 instance"
+  value       = module.compute.public_instance_arn
+}
+
 output "private_instance_id" {
   description = "The ID of the private EC2 instance"
   value       = module.compute.private_instance_id
-} 
-
-output "public_instance_public_ip" {
-  description = "The public IP address of the public EC2 instance"
-  value       = module.compute.public_instance_public_ip
 }
 
 output "private_instance_public_ip" {
   description = "The public IP address of the private EC2 instance"
   value       = module.compute.private_instance_public_ip
 }
+
+# output "private_instance_public_arn" {
+#   description = "The public ARN of the private EC2 instance"
+#   value       = module.compute.private_instance_public_arn
+# }
