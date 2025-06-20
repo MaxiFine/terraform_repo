@@ -3,14 +3,31 @@
 # }
 
 
-data "aws_ssm_parameter" "ubuntu_22_04" {
-  name = "/aws/service/canonical/ubuntu/server-jammy/stable/current/amd64/hvm/ebs-gp2/ami-id"
-}
+# data "aws_ssm_parameter" "ubuntu_22_04" {
+#   name = "/aws/service/canonical/ubuntu/server-jammy/stable/current/amd64/hvm/ebs-gp2/ami-id"
+# }
 
+data "aws_ami" "ubuntu" {
+  most_recent = true
+
+  filter {
+    name   = "name"
+    values = ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"]
+  }
+
+  filter {
+    name = "virtualization-type"
+    values = ["hvm"]
+  }
+
+  owners = ["099720109477"] # Canonical’s AWS account
+  
+}
 
 resource "aws_instance" "public_instance" {
   # ami           = data.aws_ssm_parameter.amazon_linux_ami.value
-  ami           = data.aws_ssm_parameter.ubuntu_22_04.value
+  # ami           = data.aws_ssm_parameter.ubuntu_22_04.value
+  ami                    = data.aws_ami.ubuntu.id
   instance_type = var.public_instance_type
   subnet_id = var.public_subnet_id
   security_groups        = [var.public_security_group_id]
@@ -27,7 +44,9 @@ resource "aws_instance" "public_instance" {
 
 
 resource "aws_instance" "private_instance" {
-  ami                    = data.aws_ssm_parameter.amazon_linux_ami.value
+  # ami                    = data.aws_ssm_parameter.amazon_linux_ami.value
+  # ami                    = data.aws_ssm_parameter.ubuntu_22_04.value
+  ami                    = data.aws_ami.ubuntu.id
   instance_type          = var.public_instance_type
   subnet_id              = var.private_subnet_id
   security_groups        = [var.private_security_group_id]
