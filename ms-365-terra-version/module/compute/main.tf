@@ -1,16 +1,23 @@
-data "aws_ssm_parameter" "amazon_linux_ami" {
-  name = "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2"
+# data "aws_ssm_parameter" "amazon_linux_ami" {
+#   name = "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2"
+# }
+
+
+data "aws_ssm_parameter" "ubuntu_22_04" {
+  name = "/aws/service/canonical/ubuntu/server-jammy/stable/current/amd64/hvm/ebs-gp2/ami-id"
 }
 
 
 resource "aws_instance" "public_instance" {
-  ami           = data.aws_ssm_parameter.amazon_linux_ami.value
+  # ami           = data.aws_ssm_parameter.amazon_linux_ami.value
+  ami           = data.aws_ssm_parameter.ubuntu_22_04.value
   instance_type = var.public_instance_type
   subnet_id = var.public_subnet_id
   security_groups        = [var.public_security_group_id]
   key_name               = var.key_name
   vpc_security_group_ids = [var.public_security_group_id]
   user_data              = file("${path.root}/user_data.sh")
+  associate_public_ip_address = true  # Ensures the instance gets a public routing IP address
 
   tags = {
     Name = "Public|Instance"
