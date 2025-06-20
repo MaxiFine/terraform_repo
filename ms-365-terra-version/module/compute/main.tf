@@ -6,29 +6,14 @@ data "aws_ssm_parameter" "amazon_linux_ami" {
 resource "aws_instance" "public_instance" {
   ami           = data.aws_ssm_parameter.amazon_linux_ami.value
   instance_type = var.public_instance_type
-  # subnet_id              = module.networking.public_subnet_id
   subnet_id = var.public_subnet_id
-  # security_groups        = [module.security_groups.public_security_group_id]
   security_groups        = [var.public_security_group_id]
   key_name               = var.key_name
   vpc_security_group_ids = [var.public_security_group_id]
-  user_data              = file("${path.module}/user_data.sh")
+  user_data              = file("${path.root}/user_data.sh")
 
   tags = {
-    Owner            = "aws-365"
-    Region           = "us-west-1"
-    Project          = "SAP-Btech Project"
-    GLAccount        = "GLAccount: 60001"
-    ProfitCenter     = "1001"
-    ComplianceStatus = "Yes"
-    CompanyCode      = "US01"
-    BillingCode      = "BILL-ENG-01"
-    Department       = "Engineering"
-    Environment      = "dev"
-    AssetID          = "AST-EC2-001"
-    CostCenter       = "CC-12345"
-    SAPSystemID      = "PRD"
-    SAPComponent     = "S4HANA"
+    Name = "Public|Instance"
   }
 
 }
@@ -44,28 +29,9 @@ resource "aws_instance" "private_instance" {
   user_data              = file("${path.module}/user_data.sh")
 
 
-  # tags = {
-  #   Name        = "Private|Instance"
-  #   Environment = "Development"
-  # }
-
   tags = {
-    Owner            = "aws-365"
-    Region           = "us-west-1"
-    Project          = "SAP-Btech Project"
-    GLAccount        = "GLAccount: 60001"
-    ProfitCenter     = "1001"
-    ComplianceStatus = "Yes"
-    CompanyCode      = "US01"
-    BillingCode      = "BILL-ENG-01"
-    Department       = "Engineering"
-    Environment      = "dev"
-    AssetID          = "AST-EC2-001"
-    CostCenter       = "CC-12345"
-    SAPSystemID      = "PRD"
-    SAPComponent     = "S4HANA"
+    Name        = "Private|Instance"
   }
-
 
 }
 
@@ -91,3 +57,4 @@ resource "aws_key_pair" "mx_key_pair" {
     Environment = "Development"
   }
 }
+

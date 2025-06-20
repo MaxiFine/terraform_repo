@@ -19,6 +19,7 @@ module "networking" {
 module "security_groups" {
   source = "./module/security-groups"
   vpc_id = module.networking.vpc_id
+  vpc_cidr_block = module.networking.vpc_cidr_block
 }
 
 module "compute" {
