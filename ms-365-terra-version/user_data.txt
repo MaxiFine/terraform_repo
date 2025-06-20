@@ -1,0 +1,49 @@
+#!/bin/bash
+# Update and install Nginx
+sudo apt-get update -y
+sudo apt-get install nginx -y
+
+# Configure Nginx
+cat <<EOF | sudo tee /var/www/html/index.html
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Welcome</title>
+  <style>
+    /* Your custom styles here */
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Welcome to My Website</h1>
+    <p>This page is now accessible!</p>
+  </div>
+</body>
+</html>
+EOF
+
+# Ensure correct permissions
+sudo chown -R www-data:www-data /var/www/html
+sudo chmod -R 755 /var/www/html
+
+# Configure Nginx server block
+sudo tee /etc/nginx/sites-available/default <<NGINX_CONF
+server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+    root /var/www/html;
+    index index.html;
+    server_name _;
+    location / {
+        try_files \$uri \$uri/ =404;
+    }
+}
+NGINX_CONF
+
+# Verify configuration and restart
+sudo nginx -t && sudo systemctl restart nginx
+sudo systemctl enable nginx
+
+# Get actual EC2 public IP (metadata service)
+INSTANCE_IP=$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)
+echo "Access your site: http://$INSTANCE_IP"

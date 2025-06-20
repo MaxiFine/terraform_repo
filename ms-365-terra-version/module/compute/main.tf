@@ -1,41 +1,52 @@
-data "aws_ssm_parameter" "amazon_linux_ami" {
-  name = "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2"
+# data "aws_ssm_parameter" "amazon_linux_ami" {
+#   name = "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2"
+# }
+
+
+# data "aws_ssm_parameter" "ubuntu_22_04" {
+#   name = "/aws/service/canonical/ubuntu/server-jammy/stable/current/amd64/hvm/ebs-gp2/ami-id"
+# }
+
+data "aws_ami" "ubuntu" {
+  most_recent = true
+
+  filter {
+    name   = "name"
+    values = ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"]
+  }
+
+  filter {
+    name = "virtualization-type"
+    values = ["hvm"]
+  }
+
+  owners = ["099720109477"] # Canonical’s AWS account
+  
 }
 
-
 resource "aws_instance" "public_instance" {
-  ami           = data.aws_ssm_parameter.amazon_linux_ami.value
+  # ami           = data.aws_ssm_parameter.amazon_linux_ami.value
+  # ami           = data.aws_ssm_parameter.ubuntu_22_04.value
+  ami                    = data.aws_ami.ubuntu.id
   instance_type = var.public_instance_type
-  # subnet_id              = module.networking.public_subnet_id
   subnet_id = var.public_subnet_id
-  # security_groups        = [module.security_groups.public_security_group_id]
   security_groups        = [var.public_security_group_id]
   key_name               = var.key_name
   vpc_security_group_ids = [var.public_security_group_id]
-  user_data              = file("${path.module}/user_data.sh")
+  user_data              = file("${path.root}/user_data.sh")
+  associate_public_ip_address = true  # Ensures the instance gets a public routing IP address
 
   tags = {
-    Owner            = "aws-365"
-    Region           = "us-west-1"
-    Project          = "SAP-Btech Project"
-    GLAccount        = "GLAccount: 60001"
-    ProfitCenter     = "1001"
-    ComplianceStatus = "Yes"
-    CompanyCode      = "US01"
-    BillingCode      = "BILL-ENG-01"
-    Department       = "Engineering"
-    Environment      = "dev"
-    AssetID          = "AST-EC2-001"
-    CostCenter       = "CC-12345"
-    SAPSystemID      = "PRD"
-    SAPComponent     = "S4HANA"
+    Name = "Public|Instance"
   }
 
 }
 
 
 resource "aws_instance" "private_instance" {
-  ami                    = data.aws_ssm_parameter.amazon_linux_ami.value
+  # ami                    = data.aws_ssm_parameter.amazon_linux_ami.value
+  # ami                    = data.aws_ssm_parameter.ubuntu_22_04.value
+  ami                    = data.aws_ami.ubuntu.id
   instance_type          = var.public_instance_type
   subnet_id              = var.private_subnet_id
   security_groups        = [var.private_security_group_id]
@@ -44,28 +55,9 @@ resource "aws_instance" "private_instance" {
   user_data              = file("${path.module}/user_data.sh")
 
 
-  # tags = {
-  #   Name        = "Private|Instance"
-  #   Environment = "Development"
-  # }
-
   tags = {
-    Owner            = "aws-365"
-    Region           = "us-west-1"
-    Project          = "SAP-Btech Project"
-    GLAccount        = "GLAccount: 60001"
-    ProfitCenter     = "1001"
-    ComplianceStatus = "Yes"
-    CompanyCode      = "US01"
-    BillingCode      = "BILL-ENG-01"
-    Department       = "Engineering"
-    Environment      = "dev"
-    AssetID          = "AST-EC2-001"
-    CostCenter       = "CC-12345"
-    SAPSystemID      = "PRD"
-    SAPComponent     = "S4HANA"
+    Name        = "Private|Instance"
   }
-
 
 }
 
@@ -91,3 +83,4 @@ resource "aws_key_pair" "mx_key_pair" {
     Environment = "Development"
   }
 }
+

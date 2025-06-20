@@ -12,7 +12,7 @@ variable "public_instance_type" {
 variable "key_name" {
   description = "The name of the key pair to use for the instance"
   type        = string
-  default     = "mx-keypair"
+  default     = "test-keypair"
 }
 
 variable "public_security_group_id" {
