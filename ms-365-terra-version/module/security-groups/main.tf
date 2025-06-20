@@ -79,13 +79,13 @@ resource "aws_security_group" "private_sg" {
     description = "Allow SSH access from public security group"
   }
 
-  ingress {
-    from_port   = -1
-    to_port     = -1
-    protocol    = "icmp"
-    cidr_blocks = ["0.0.0.0/0"]
-    description = "Allow ICMP traffic from anywhere"
-  }
+  # ingress {
+  #   from_port   = -1
+  #   to_port     = -1
+  #   protocol    = "icmp"
+  #   cidr_blocks = ["0.0.0.0/0"]
+  #   description = "Allow ICMP traffic from anywhere"
+  # }
 
   ingress {
     from_port   = -1
