@@ -9,6 +9,13 @@ resource "aws_security_group" "public_sg" {
     cidr_blocks = ["0.0.0.0/0"]
     description = "Allow HTTP access from anywhere"
   }
+  ingress {
+    from_port   = 8080
+    to_port     = 8080
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+    description = "Allow HTTP access from anywhere"
+  }
 
   ingress {
     from_port   = 443
@@ -35,8 +42,8 @@ resource "aws_security_group" "public_sg" {
   }
 
   tags = {
-    Name        = "Public Security Group"
-    Environment = "Development"
+    Name        = "Public Security|Group"
+    Environment = "TestDev"
   }
 }
 
@@ -56,6 +63,14 @@ resource "aws_security_group" "private_sg" {
   }
 
   ingress {
+    from_port       = 8080
+    to_port         = 8080
+    protocol        = "tcp"
+    security_groups = [aws_security_group.public_sg.id]
+    description     = "Allow PostgreSQL access from public security group"
+  }
+
+  ingress {
     from_port = 22
     to_port   = 22
     protocol  = "tcp"
@@ -63,6 +78,24 @@ resource "aws_security_group" "private_sg" {
     security_groups = [aws_security_group.public_sg.id]
     description = "Allow SSH access from public security group"
   }
+
+  ingress {
+    from_port   = -1
+    to_port     = -1
+    protocol    = "icmp"
+    cidr_blocks = ["0.0.0.0/0"]
+    description = "Allow ICMP traffic from anywhere"
+  }
+
+  ingress {
+    from_port   = -1
+    to_port     = -1
+    protocol    = "icmp"
+    cidr_blocks = [var.vpc_cidr_block]
+    description = "Allow ICMP traffic from VPC CIDR"
+  }
+
+
 
   egress {
     from_port   = 0
@@ -73,7 +106,7 @@ resource "aws_security_group" "private_sg" {
   }
 
   tags = {
-    Name        = "Private Security Group"
-    Environment = "Development"
+    Name        = "Private Security|Group"
+    Environment = "TestDev"
   }
 }

@@ -49,3 +49,8 @@ output "mx_nat_gateway" {
   description = "The NAT Gateway ID"
   value       = aws_nat_gateway.mx_nat_gateway.public_ip
 }
+
+output "vpc_cidr_block" {
+  description = "The CIDR block for the VPC"
+  value       = aws_vpc.mx-vpc.cidr_block
+}
