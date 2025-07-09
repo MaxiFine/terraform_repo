@@ -4,3 +4,10 @@ variable "aws_region" {
   # default     = "eu-north-1"  
   default     = "eu-west-1"  # using eu-west-1 for to comply scp
 }
+
+variable "email_for_notifications" {
+  description = "Email address to receive notifications."
+  type        = string
+  # default     = "gibboel5@gmail.com"
+  default = "maxwell.adomako@amailtech.com"
+}

@@ -29,3 +29,11 @@ module "compute" {
   public_subnet_id = module.networking.public_subnet_id
   private_subnet_id = module.networking.private_subnet_id
 }
+
+module "notifications" {
+  source = "./module/notifications"
+  # project_tag = var.project_tag
+  # environment_name = var.environment_name
+  # department = var.department
+  # notification_email = var.notification_email
+}
