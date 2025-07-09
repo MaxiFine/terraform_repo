@@ -9,5 +9,5 @@ variable "email_for_notifications" {
   description = "Email address to receive notifications."
   type        = string
   # default     = "gibboel5@gmail.com"
-  default = "maxwell.adomako@amailtech.com"
+  default = "maxwell.adomako@amalitech.com"
 }

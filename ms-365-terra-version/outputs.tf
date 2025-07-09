@@ -87,3 +87,9 @@ output "private_instance_public_ip" {
 #   description = "The public ARN of the private EC2 instance"
 #   value       = module.compute.private_instance_public_arn
 # }
+
+output "name_of_sns_topic" {
+  description = "The name of the SNS topic"
+  value       = module.notifications.topic_name
+  
+}
