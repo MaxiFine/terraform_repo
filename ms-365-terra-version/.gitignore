@@ -45,3 +45,4 @@ terraform.tfstate.*.backup
 tfkey
 .terraform/*
 useful-commands.txt
+terraform.tfvars

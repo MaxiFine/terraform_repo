@@ -1,22 +1,22 @@
 
-locals {
-  common_tags = {
-    Project      = "Mx365|Project"
-    Department   = "DevOps"
-    Environment  = "Development"
-  }
-}
+# locals {
+#   common_tags = {
+#     Project      = "Mx365Project"
+#     Department   = "DevOps"
+#     Environment  = "Development"
+#   }
+# }
 
 resource "aws_sns_topic" "sns_topic" {
   name         = var.topic_name
-  display_name = "AWS-365 Topic"
+  display_name = "Mx-SnsTopic"
 
-  tags = merge(local.common_tags, {
-    Name         = var.topic_name
-    Project      = var.project_tag
+  tags = {
+    Project      = "Mx365Project"
     Environment  = "Development"
     ResourceType = "SNS Topic"
-  })
+  }
+
 }
 
 # resource "aws_sqs_queue" "sqs_queue" {
