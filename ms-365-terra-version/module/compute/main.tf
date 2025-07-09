@@ -38,6 +38,7 @@ resource "aws_instance" "public_instance" {
 
   tags = {
     Name = "Public|Instance"
+    Environment = "Development"
   }
 
 }
