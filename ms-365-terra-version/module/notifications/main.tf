@@ -1,9 +1,9 @@
 
 locals {
   common_tags = {
-    Project      = var.project_tag
-    Department   = var.department
-    Environment  = var.environment_name
+    Project      = "Mx365|Project"
+    Department   = "DevOps"
+    Environment  = "Development"
   }
 }
 
@@ -13,6 +13,8 @@ resource "aws_sns_topic" "sns_topic" {
 
   tags = merge(local.common_tags, {
     Name         = var.topic_name
+    Project      = var.project_tag
+    Environment  = "Development"
     ResourceType = "SNS Topic"
   })
 }
@@ -73,19 +75,5 @@ resource "aws_sns_topic_subscription" "email_subscription" {
   endpoint  = var.email_for_notifications
 }
 
-data "aws_caller_identity" "current" {}
+# data "aws_caller_identity" "current" {}
 
-output "topic_arn" {
-  value       = aws_sns_topic.sns_topic.arn
-  description = "Topic Arn"
-}
-
-output "queue_url" {
-  value       = aws_sqs_queue.sqs_queue.url
-  description = "Queue URL"
-}
-
-output "queue_name" {
-  value       = var.queue_name
-  description = "Queue Name"
-}
