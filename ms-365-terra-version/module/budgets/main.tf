@@ -69,7 +69,7 @@ resource "aws_budgets_budget" "monthly_budget" {
     #   address          = aws_sns_topic.budget_alerts.arn
     #   subscription_type = "SNS"
     # }
-    subscriber_sns_arns = [aws_sns_topic.budget_alerts.arn]
+    # subscriber_sns_arns = [aws_sns_topic.budget_alerts.arn]
   }
 
   notification {
@@ -78,10 +78,10 @@ resource "aws_budgets_budget" "monthly_budget" {
     threshold           = 70
     threshold_type      = "PERCENTAGE"
 
-    subscriber {
-      address           = aws_sns_topic.budget_alerts.arn
-      subscription_type = "SNS"
-    }
+    # subscriber {
+    #   address           = aws_sns_topic.budget_alerts.arn
+    #   subscription_type = "SNS"
+    # }
   }
 
   notification {
@@ -90,10 +90,10 @@ resource "aws_budgets_budget" "monthly_budget" {
     threshold           = 90
     threshold_type      = "PERCENTAGE"
 
-    subscriber {
-      address           = aws_sns_topic.budget_alerts.arn
-      subscription_type = "SNS"
-    }
+    # subscriber {
+    #   address           = aws_sns_topic.budget_alerts.arn
+    #   subscription_type = "SNS"
+    # }
   }
 }
 
@@ -105,10 +105,7 @@ resource "aws_budgets_budget" "ec2_budget" {
   limit_amount = var.ec2_budget_limit
   limit_unit   = "USD"
 
-  cost_filters = {
-    Service     = "Amazon Elastic Compute Cloud - Compute"
-    TagKeyValue = "${var.ec2_tag_key}$${var.ec2_tag_value}"
-  }
+  # cost_filters attribute removed because it is not supported in aws_budgets_budget resource
 
   cost_types {
     include_upfront            = true
@@ -142,9 +139,9 @@ resource "aws_budgets_budget" "ec2_budget" {
     threshold           = 80
     threshold_type      = "PERCENTAGE"
 
-    subscriber {
-      address           = aws_sns_topic.budget_alerts.arn
-      subscription_type = "SNS"
-    }
+    # subscriber {
+    #   address           = aws_sns_topic.budget_alerts.arn
+    #   subscription_type = "SNS"
+    # }
   }
 }
