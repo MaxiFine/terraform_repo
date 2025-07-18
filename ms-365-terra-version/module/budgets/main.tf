@@ -22,13 +22,13 @@ resource "aws_sns_topic_subscription" "email" {
 
 # SNS Policy to allow Budgets to publish
 resource "aws_sns_topic_policy" "budget_policy" {
-  arn    = aws_sns_topic.budget_alerts.arn
+  arn = aws_sns_topic.budget_alerts.arn
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
       {
-        Sid       = "AllowBudgetsToPublish"
-        Effect    = "Allow"
+        Sid    = "AllowBudgetsToPublish"
+        Effect = "Allow"
         Principal = {
           Service = "budgets.amazonaws.com"
         }
@@ -41,11 +41,11 @@ resource "aws_sns_topic_policy" "budget_policy" {
 
 # Main Budget
 resource "aws_budgets_budget" "monthly_budget" {
-  name              = var.budget_name
-  budget_type       = "COST"
-  time_unit         = "MONTHLY"
-  limit_amount      = var.budget_limit
-  limit_unit        = "USD"
+  name         = var.budget_name
+  budget_type  = "COST"
+  time_unit    = "MONTHLY"
+  limit_amount = var.budget_limit
+  limit_unit   = "USD"
 
   cost_types {
     include_upfront            = true
@@ -65,10 +65,11 @@ resource "aws_budgets_budget" "monthly_budget" {
     threshold           = 50
     threshold_type      = "PERCENTAGE"
 
-    subscriber {
-      address          = aws_sns_topic.budget_alerts.arn
-      subscription_type = "SNS"
-    }
+    # subscriber {
+    #   address          = aws_sns_topic.budget_alerts.arn
+    #   subscription_type = "SNS"
+    # }
+    subscriber_sns_arns = [aws_sns_topic.budget_alerts.arn]
   }
 
   notification {
@@ -78,7 +79,7 @@ resource "aws_budgets_budget" "monthly_budget" {
     threshold_type      = "PERCENTAGE"
 
     subscriber {
-      address          = aws_sns_topic.budget_alerts.arn
+      address           = aws_sns_topic.budget_alerts.arn
       subscription_type = "SNS"
     }
   }
@@ -90,7 +91,7 @@ resource "aws_budgets_budget" "monthly_budget" {
     threshold_type      = "PERCENTAGE"
 
     subscriber {
-      address          = aws_sns_topic.budget_alerts.arn
+      address           = aws_sns_topic.budget_alerts.arn
       subscription_type = "SNS"
     }
   }
@@ -98,15 +99,15 @@ resource "aws_budgets_budget" "monthly_budget" {
 
 # EC2 Filtered Budget
 resource "aws_budgets_budget" "ec2_budget" {
-  name              = "${var.budget_name}-EC2InstanceUsage"
-  budget_type       = "COST"
-  time_unit         = "MONTHLY"
-  limit_amount      = var.ec2_budget_limit
-  limit_unit        = "USD"
+  name         = "${var.budget_name}-EC2InstanceUsage"
+  budget_type  = "COST"
+  time_unit    = "MONTHLY"
+  limit_amount = var.ec2_budget_limit
+  limit_unit   = "USD"
 
   cost_filters = {
-    Service       = "Amazon Elastic Compute Cloud - Compute"
-    TagKeyValue   = "${var.ec2_tag_key}$${var.ec2_tag_value}"
+    Service     = "Amazon Elastic Compute Cloud - Compute"
+    TagKeyValue = "${var.ec2_tag_key}$${var.ec2_tag_value}"
   }
 
   cost_types {
@@ -127,12 +128,12 @@ resource "aws_budgets_budget" "ec2_budget" {
     threshold           = 50
     threshold_type      = "PERCENTAGE"
 
-    subscriber_sns_arns    = [aws_sns_topic.budget_alerts.arn]
-    
-  # subscriber {
-  #     address          = aws_sns_topic.budget_alerts.arn
-  #     subscription_type = "SNS"
-  #   }
+    # subscriber_sns_arns    = [aws_sns_topic.budget_alerts.arn]
+
+    # subscriber {
+    #     address          = aws_sns_topic.budget_alerts.arn
+    #     subscription_type = "SNS"
+    #   }
   }
 
   notification {
@@ -142,7 +143,7 @@ resource "aws_budgets_budget" "ec2_budget" {
     threshold_type      = "PERCENTAGE"
 
     subscriber {
-      address          = aws_sns_topic.budget_alerts.arn
+      address           = aws_sns_topic.budget_alerts.arn
       subscription_type = "SNS"
     }
   }
