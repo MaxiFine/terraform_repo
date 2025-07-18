@@ -13,6 +13,9 @@ provider "aws" {
 
 module "networking" {
   source = "./module/networking"
+  providers = {
+    
+  }
    
 }
 
@@ -22,10 +25,23 @@ module "security_groups" {
   vpc_cidr_block = module.networking.vpc_cidr_block
 }
 
-module "compute" {
-  source = "./module/compute"
-  public_security_group_id = module.security_groups.public_security_group_id
-  private_security_group_id = module.security_groups.private_security_group_id  
-  public_subnet_id = module.networking.public_subnet_id
-  private_subnet_id = module.networking.private_subnet_id
+# module "compute" {
+#   source = "./module/compute"
+#   public_security_group_id = module.security_groups.public_security_group_id
+#   private_security_group_id = module.security_groups.private_security_group_id  
+#   public_subnet_id = module.networking.public_subnet_id
+#   private_subnet_id = module.networking.private_subnet_id
+# }
+
+# module "notifications" {
+#   source = "./module/notifications"
+#   # project_tag = var.project_tag
+#   # environment_name = var.environment_name
+#   # department = var.department
+#   # notification_email = var.notification_email
+# }
+
+module "budgets" {
+  source = "./module/budgets"
+  # sns_topic_arn = module.notifications.sns_topic_arn
 }
