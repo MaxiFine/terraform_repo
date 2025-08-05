@@ -50,7 +50,7 @@
 ## NEW CONDIGS STARTS HERE
 ##################################
 
-name: Test Terraform Plan
+name: Test Terraform Plan And Apply
 on:
   push:
     branches: [ main ]
@@ -94,14 +94,21 @@ jobs:
           fi
 
       - name: Terraform Init
-        run: terraform init \
-          -backend-config="bucket=${{ env.AWS_S3_BUCKET }}" \
-          -backend-config="region=${{ env.AWS_REGION }}" \
-          -backend-config="key=terraform.tfstate"
+        run: |
+          terraform init \
+            -backend-config="bucket=${{ env.AWS_S3_BUCKET }}" \
+            -backend-config="region=${{ env.AWS_REGION }}" \
+            -backend-config="key=terraform.tfstate"
 
       - name: Terraform Plan
         id: plan
         run: terraform plan -out=tfplan
+
+      - name: Terraform Validate 
+        run: terraform validate
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve tfplan
 
       # - name: Verify AWS identity
       #   run: aws sts get-caller-identity
