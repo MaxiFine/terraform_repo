@@ -1,0 +1,54 @@
+name: Terraform Plan
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  terraform-plan:
+    runs-on: ubuntu-latest
+    env:
+      AWS_REGION: us-east-1
+      AWS_DEFAULT_REGION: us-east-1
+      AWS_S3_BUCKET: my-terraform-state-bucket
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v1
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region:            ${{ env.AWS_REGION }}
+
+      - name: Ensure S3 bucket exists
+        run: |
+          if ! aws s3api head-bucket --bucket "${{ env.AWS_S3_BUCKET }}" 2>/dev/null; then
+            echo "Bucket ${{ env.AWS_S3_BUCKET }} not found; creating…"
+            aws s3api create-bucket \
+              --bucket "${{ env.AWS_S3_BUCKET }}" \
+              --region "${{ env.AWS_REGION }}"
+            # (Optional) enable versioning so state file history is preserved:
+            aws s3api put-bucket-versioning \
+              --bucket "${{ env.AWS_S3_BUCKET }}" \
+              --versioning-configuration Status=Enabled
+          else
+            echo "Bucket ${{ env.AWS_S3_BUCKET }} already exists."
+          fi
+
+      - name: Terraform Init
+        run: terraform init \
+          -backend-config="bucket=${{ env.AWS_S3_BUCKET }}" \
+          -backend-config="region=${{ env.AWS_REGION }}"
+
+      - name: Terraform Plan
+        id: plan
+        run: terraform plan -out=tfplan
+
+      - name: Verify AWS identity
+        run: aws sts get-caller-identity
