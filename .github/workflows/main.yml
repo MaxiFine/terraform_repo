@@ -50,7 +50,7 @@
 ## NEW CONDIGS STARTS HERE
 ##################################
 
-name: Terraform Plan
+name: Test Terraform Plan
 on:
   push:
     branches: [ main ]
@@ -61,7 +61,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       AWS_REGION: us-east-1
-      AWS_DEFAULT_REGION: us-east-1
+      # AWS_DEFAULT_REGION: us-east-1
       AWS_S3_BUCKET: my-terraform-state-bucket
 
     steps:
@@ -96,11 +96,12 @@ jobs:
       - name: Terraform Init
         run: terraform init \
           -backend-config="bucket=${{ env.AWS_S3_BUCKET }}" \
-          -backend-config="region=${{ env.AWS_REGION }}"
+          -backend-config="region=${{ env.AWS_REGION }}" \
+          -backend-config="key=terraform.tfstate"
 
       - name: Terraform Plan
         id: plan
         run: terraform plan -out=tfplan
 
-      - name: Verify AWS identity
-        run: aws sts get-caller-identity
+      # - name: Verify AWS identity
+      #   run: aws sts get-caller-identity
