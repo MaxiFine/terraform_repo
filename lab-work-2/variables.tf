@@ -6,10 +6,18 @@ variable "aws_region" {
   
 }
 
+# variable "bucket_name" {
+#     description = "AWS S3 Bucket"
+#     type = string
+#     default = "mx-lab-bucket"
+  
+# }
+
 variable "bucket_name" {
     description = "AWS S3 Bucket"
     type = string
-    default = "mx-lab-bucket"
+    # default = "mx-lab-bucket"
+    default = "mx-tf-state-bucket-dev"
   
 }
 

@@ -1,53 +1,5 @@
-# # NEW CONFIGS
-# name: 'Terraform Plan'
-# on: 
-#   push:
-#     branches:
-#       - main
-
-#   workflow_dispatch:
-
-# jobs:
-#     terraform-plan:
-#       name: 'Terraform Plan'
-#       runs-on: ubuntu-latest
-#       # permissions:
-#       #   contents: read
-#       #   push: write
-
-#       env: 
-#         AWS_REGION: 'us-east-1'
-#         AWS_DEFAULT_REGION: 'us-east-1'
-#         AWS_S3_BUCKET: 'my-terraform-state-bucket'
-#         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-#         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-
-#       steps:
-#         - name: Checkout repository
-#           uses: actions/checkout@v4
-
-#         - name: Set up Terraform
-#           uses: hashicorp/setup-terraform@v1
-         
-#         -  name: Configure AWS Credentials
-#            uses: aws-actions/configure-aws-credentials@v1
-#            env:
-#             REGION: ${ AWS_REGION }
-#            with:
-#               aws-access-key-id: ${{ secrets.WS_ACCESS_KEY_ID }}
-#               aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-#               # aws-region: 'us-east-1'
-#               aws-region: ${{ env.AWS_REGION }}
-
-#         - name: Terraform Init
-#           run: terraform init
-
-#         - name: Terraform Plan
-#           id: terraform
-#           run: terraform plan -out=tfplan
-
 ##################################
-## NEW CONDIGS STARTS HERE
+## NEW CONFIGS STARTS HERE
 ##################################
 
 name: Test Terraform Plan And Apply
@@ -69,7 +21,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up Terraform
-        uses: hashicorp/setup-terraform@v1
+        uses: hashicorp/setup-terraform@v2
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
@@ -94,11 +46,11 @@ jobs:
           fi
 
       - name: Terraform Init
-        run: |
-          terraform init \
-            -backend-config="bucket=${{ env.AWS_S3_BUCKET }}" \
-            -backend-config="region=${{ env.AWS_REGION }}" \
-            -backend-config="key=terraform.tfstate"
+        run:  terraform init -upgrade 
+        # removed the backend config for now to be in main.tf
+            # -backend-config="bucket=${{ env.AWS_S3_BUCKET }}" \
+            # -backend-config="region=${{ env.AWS_REGION }}" \
+            # -backend-config="key=terraform.tfstate"
 
       - name: Terraform Plan
         id: plan
