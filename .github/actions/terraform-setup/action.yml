@@ -9,7 +9,7 @@ inputs:
   aws-region:
     description: "AWS region for deployment"
     required: true
-    # default: "us-east-1"
+    default: "us-east-1"
   aws-access-key-id:
     description: "AWS Access Key ID"
     required: true
@@ -21,15 +21,15 @@ inputs:
   tf-bucket-name:
     description: "S3 bucket name for Terraform state"
     required: true
-    # default: "aws-ecommerce-terraform"
+    default: "aws-ecommerce-terraform"
   tf-dynamodb-table:
     description: "DynamoDB table name for Terraform lock"
     required: true
-    # default: "terraform-state-lock"
+    default: "terraform-state-lock"
   working-directory:
     description: "Working directory for Terraform commands"
     required: true
-    # default: "lab-work-2"
+    default: "lab-work-2"
 
 runs:
   using: "composite"
