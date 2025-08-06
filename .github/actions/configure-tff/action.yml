@@ -9,12 +9,15 @@ inputs:
   aws-region:
     description: "AWS region for deployment"
     required: true
+    default: "us-east-1"
   aws-access-key-id:
     description: "AWS Access Key ID"
     required: true
+    default: ${{ secrets.AWS_ACCESS_KEY_ID }}
   aws-secret-access-key:
     description: "AWS Secret Access Key"
     required: true
+    default: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
   tf-bucket-name:
     description: "S3 bucket name for Terraform state"
     required: true
