@@ -5,7 +5,7 @@ terraform {
     # replace with your bucket name and region to run it 
     bucket         = "devops-directive-tf-state"
     key            = "03-basics/web-app/terraform.tfstate"
-    region         = "eu-west2"
+    region         = "eu-west-2"
     dynamodb_table = "terraform-state-locking"
     encrypt        = true
   }
