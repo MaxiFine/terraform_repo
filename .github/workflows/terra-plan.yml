@@ -44,7 +44,7 @@ jobs:
               shell: bash
               run: |
                 echo "🚀 Initializing Terraform..."
-                terraform init -migrate-state \
+                terraform init -reconfigure \
                     -backend-config="bucket=$TF_S3_BUCKET" \
                     -backend-config="key=terraform.tfstate" \
                     -backend-config="region=$AWS_REGION" \
