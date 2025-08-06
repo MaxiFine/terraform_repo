@@ -31,6 +31,9 @@ jobs:
 
     steps:
 
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Validate Destroy Confirmation
         run: |
           if [ "${{ github.event.inputs.confirm_destroy }}" != "destroy" ]; then
