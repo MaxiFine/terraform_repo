@@ -117,13 +117,33 @@ runs:
           exit 1
         fi
         echo "✅ Terraform format check passed"
+        
+#   another way to do this is to use the terraform-setup action
+    # - name: Write backend.tfvars for backend configs
+    #   run: | 
+    #     echo "Writing backend.tfvars for Terraform backend configuration..."
+    #     cat > backend.tfvars << EOF
+    #     bucket = "${{ inputs.tf-bucket-name }}"
+    #     key    = "terraform.tfstate"
+    #     region = "${{ inputs.aws-region }}"
+    #     encrypt = true
+    #     dynamodb_table = "${{ inputs.tf-dynamodb-table }}"
+    #     EOF
+    #     echo "✅ backend.tfvars created"
 
     - name: Terraform Initialize
       shell: bash
       working-directory: ${{ inputs.working-directory }}
       run: |
         echo "🚀 Initializing Terraform..."
+        # terraform init -backend-config=backend.tfvars
+        # echo "✅ Terraform initialized"
         terraform init
+          -backend-config="bucket=${{ inputs.tf-bucket-name }}" \
+          -backend-config="key=terraform.tfstate" \
+          -backend-config="region=${{ inputs.aws-region }}" \
+          -backend-config="encrypt=true" \
+          -backend-config="dynamodb_table=${{ inputs.tf-dynamodb-table }}"
         echo "✅ Terraform initialized"
 
     - name: Terraform Validate

@@ -1,13 +1,15 @@
 terraform {
 
   # Backend configuration for storing Terraform state
-  backend "s3" {
-    bucket         = "mx-tf-state-bucket-dev"
-    key            = "lab-work-2/terraform.tfstate"
-    region        = "us-east-1"
-    encrypt = true
-    dynamodb_table = "mx-tf-state-dynamo-table-dev"
-  }
+  # backend "s3" {
+  #   bucket         = "mx-tf-state-bucket-dev"
+  #   key            = "terraform.tfstate"
+  #   region        = "us-east-1"
+  #   encrypt = true
+  #   dynamodb_table = "mx-tf-state-dynamo-table-dev"
+  # }
+  
+  backend "s3" {}
 
     required_providers {
         aws = {
