@@ -6,6 +6,6 @@ output "website_endpoint" {
 }
 
 # modules call type
-output "website_endpoint_module_call_type" {
-  value = module.s3.website_endpoint
-}
+# output "website_endpoint_module_call_type" {
+#   value = module.s3.website_endpoint
+# }
