@@ -131,20 +131,20 @@ runs:
     #     EOF
     #     echo "✅ backend.tfvars created"
 
-    # - name: Terraform Initialize
-    #   shell: bash
-    #   working-directory: ${{ inputs.working-directory }}
-    #   run: |
-    #     echo "🚀 Initializing Terraform..."
-    #     # terraform init -backend-config=backend.tfvars
-    #     # echo "✅ Terraform initialized"
-    #     terraform init
-    #       -backend-config="bucket=${{ inputs.tf-bucket-name }}" \
-    #       -backend-config="key=terraform.tfstate" \
-    #       -backend-config="region=${{ inputs.aws-region }}" \
-    #       -backend-config="encrypt=true" \
-    #       -backend-config="dynamodb_table=${{ inputs.tf-dynamodb-table }}"
-    #     echo "✅ Terraform initialized"
+    - name: Terraform Initialize
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        echo "🚀 Initializing Terraform..."
+        # terraform init -backend-config=backend.tfvars
+        # echo "✅ Terraform initialized"
+        terraform init
+          # -backend-config="bucket=${{ inputs.tf-bucket-name }}" \
+          # -backend-config="key=terraform.tfstate" \
+          # -backend-config="region=${{ inputs.aws-region }}" \
+          # -backend-config="encrypt=true" \
+          # -backend-config="dynamodb_table=${{ inputs.tf-dynamodb-table }}"
+        echo "✅ Terraform initialized"
 
     - name: Terraform Validate
       shell: bash
