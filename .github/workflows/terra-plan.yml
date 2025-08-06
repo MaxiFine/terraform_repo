@@ -43,11 +43,13 @@ jobs:
             - name: Terraform Init
               shell: bash
               run: |
-                terraform init \
+                echo "🚀 Initializing Terraform..."
+                terraform init -migrate-state \
                     -backend-config="bucket=$TF_S3_BUCKET" \
                     -backend-config="key=terraform.tfstate" \
                     -backend-config="region=$AWS_REGION" \
                     -backend-config="dynamodb_table=$TF_DYNAMO_DB_TABLE"
+                    echo "✅ Terraform initialized"
 
             - name: Terraform Plan
               run: |
