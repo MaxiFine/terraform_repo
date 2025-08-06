@@ -4,9 +4,9 @@ on:
     push: 
         branches:
             - main
-    # pull_request:
-    #     branches:
-    #         - main
+    pull_request:
+        branches:
+            - main
     workflow_dispatch:
 
 jobs:
@@ -29,7 +29,7 @@ jobs:
             - name: Checkout repository
               uses: actions/checkout@v4
 
-            - name: Configure Terraform Environment
+            - name: Configure Terraform Environment For Plan
               uses: ./.github/actions/configure-tf
               with: 
                 aws-region: ${{ env.AWS_REGION }}
