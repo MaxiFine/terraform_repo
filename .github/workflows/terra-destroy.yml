@@ -12,6 +12,7 @@ on:
 
 jobs:
   terraform-destroy:
+    name: Terraform Destroy
     runs-on: ubuntu-latest
     env:
       AWS_REGION: us-east-1
@@ -30,14 +31,20 @@ jobs:
 
     steps:
 
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Validate Destroy Confirmation
         run: |
           if [ "${{ github.event.inputs.confirm_destroy }}" != "destroy" ]; then
             echo "Error: Invalid input. Please type 'destroy' to proceed."
             exit 1
           fi
-      - name: Checkout repository
-        uses: actions/checkout@v4
+          echo "Destroy confirmation received. Proceeding with Terraform destroy."
+
+
+      # - name: Checkout repository
+      #   uses: actions/checkout@v4
 
       - name: Set up Terraform
         uses: ./.github/actions/configure-tf
@@ -66,13 +73,13 @@ jobs:
         run: |
           echo "🚀 Applying Terraform Destroy..."
           terraform apply -auto-approve destroy.tfplan
-          echo "Terraform Destroy completed."
+          echo "✅ Terraform Destroy completed."
 
       - name: Clean up Terraform State
         run: |
-          echo "Cleaning up Terraform state files..."
+          echo "✅ Cleaning up Terraform state files..."
           rm -f destroy.tfplan
-          echo "Terraform state cleanup completed."
+          echo "✅ Terraform state cleanup completed."
         
       - name: Cleanup Warning
         run: |
