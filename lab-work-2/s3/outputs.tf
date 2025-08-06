@@ -10,11 +10,11 @@ output "website_endpoint" {
 #   value = module.s3.website_endpoint
 # }
 
-output "name_of_s3_bucket" {
-    description = "Name of the S3 bucket"
-    value       = aws_s3_bucket.mx-bucket.website_domain
+# output "name_of_s3_bucket" {
+#     description = "Name of the S3 bucket"
+#     value       = aws_s3_bucket.mx-bucket.website_domain
   
-}
+# }
 
 output "s3_bucket_id" {
     description = "ID of the S3 bucket"
