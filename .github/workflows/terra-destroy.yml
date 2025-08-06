@@ -1,55 +1,114 @@
 name: Terraform Destroy
 on:
-  push:
-    branches: [ main ]
+  # push:
+  #   branches: [ main ]
   workflow_dispatch:
+    inputs:
+      confirm_destroy:
+        description: "type 'destroy' for the destroy operation"
+        required: true
+        # default: 'Destroying Terraform resources'
+        type: string
 
 jobs:
-  terraform-plan:
+  terraform-destroy:
     runs-on: ubuntu-latest
     env:
       AWS_REGION: us-east-1
       # AWS_REGION: ${{ secrets.AWS_REGION }}
       # AWS_DEFAULT_REGION: us-east-1
-      AWS_S3_BUCKET: "mx-tf-state-bucket-dev"
+      # AWS_S3_BUCKET: "mx-tf-state-bucket-dev"
+      AWS_S3_BUCKET: ${{ secrets.TF_S3_BUCKET }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      # TF_DYNAMO_DB_TABLE: "mx-tf-state-table"
+      TF_DYNAMO_DB_TABLE: ${{ secrets.TF_DYNAMO_DB_TABLE }}
+
+    defaults:
+      run:
+        working-directory: ./lab-work-2
 
     steps:
+
+      - name: Validate Destroy Confirmation
+        run: |
+          if [ "${{ github.event.inputs.confirm_destroy }}" != "destroy" ]; then
+            echo "Error: Invalid input. Please type 'destroy' to proceed."
+            exit 1
+          fi
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Set up Terraform
-        uses: hashicorp/setup-terraform@v1
-
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v2
+        uses: ./.github/actions/configure-tf
         with:
-          aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region:            ${{ env.AWS_REGION }}
+          aws-region: ${{ env.AWS_REGION }}
+          aws-access-key-id: ${{ env.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ env.AWS_SECRET_ACCESS_KEY }}
+          tf-bucket-name: ${{ env.AWS_S3_BUCKET }}
+          tf-dynamodb-table: ${{ env.TF_DYNAMO_DB_TABLE }}
+          working-directory: ./lab-work-2
 
-      - name: Ensure S3 bucket exists
+      # - name: Configure AWS Credentials
+      #   uses: aws-actions/configure-aws-credentials@v2
+      #   with:
+      #     aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+      #     aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      #     aws-region:            ${{ env.AWS_REGION }}
+
+      - name: Terraform Plan Destroy
         run: |
-          if ! aws s3api head-bucket --bucket "${{ env.AWS_S3_BUCKET }}" 2>/dev/null; then
-            echo "Bucket ${{ env.AWS_S3_BUCKET }} not found; creating…"
-            aws s3api create-bucket \
-              --bucket "${{ env.AWS_S3_BUCKET }}" \
-              --region "${{ env.AWS_REGION }}"
-            # (Optional) enable versioning so state file history is preserved:
-            aws s3api put-bucket-versioning \
-              --bucket "${{ env.AWS_S3_BUCKET }}" \
-              --versioning-configuration Status=Enabled
-          else
-            echo "Bucket ${{ env.AWS_S3_BUCKET }} already exists."
-          fi
+          echo "📋 Running Terraform Plan for Destroy..."
+          terraform plan -destroy -out=destroy.tfplan
+          echo "Terraform Plan for Destroy completed."
 
-      - name: Terraform Init
-        run: terraform init \
-          -backend-config="bucket=${{ env.AWS_S3_BUCKET }}" \
-          -backend-config="region=${{ env.AWS_REGION }}"
+      - name: Terraform Apply Destroy
+        run: |
+          echo "🚀 Applying Terraform Destroy..."
+          terraform apply -auto-approve destroy.tfplan
+          echo "Terraform Destroy completed."
 
-      - name: Terraform Plan
-        id: plan
-        run: terraform plan -out=tfplan
+      - name: Clean up Terraform State
+        run: |
+          echo "Cleaning up Terraform state files..."
+          rm -f destroy.tfplan
+          echo "Terraform state cleanup completed."
+        
+      - name: Cleanup Warning
+        run: |
+          echo "⚠️ Please ensure that you have backed up any necessary data before proceeding with the destroy operation."
+          echo "This action will permanently delete all resources managed by Terraform in this configuration."
+          echo "If you are sure, type 'destroy' to confirm the operation."
+          echo "⚠️  IMPORTANT: The following resources were NOT destroyed and may incur costs:"
+          echo "   - S3 bucket: ${TF_BUCKET_NAME} (contains Terraform state)"
+          echo "   - DynamoDB table: ${TF_DYNAMODB_TABLE} (for state locking)"
+          echo ""
+          echo "💡 To completely clean up, manually delete these resources if no longer needed."
 
-      - name: Verify AWS identity
-        run: aws sts get-caller-identity
+
+      # - name: Ensure S3 bucket exists
+      #   run: |
+      #     if ! aws s3api head-bucket --bucket "${{ env.AWS_S3_BUCKET }}" 2>/dev/null; then
+      #       echo "Bucket ${{ env.AWS_S3_BUCKET }} not found; creating…"
+      #       aws s3api create-bucket \
+      #         --bucket "${{ env.AWS_S3_BUCKET }}" \
+      #         --region "${{ env.AWS_REGION }}"
+      #       # (Optional) enable versioning so state file history is preserved:
+      #       aws s3api put-bucket-versioning \
+      #         --bucket "${{ env.AWS_S3_BUCKET }}" \
+      #         --versioning-configuration Status=Enabled
+      #     else
+      #       echo "Bucket ${{ env.AWS_S3_BUCKET }} already exists."
+      #     fi
+
+      # - name: Terraform Init
+      #   run: terraform init \
+      #     -backend-config="bucket=${{ env.AWS_S3_BUCKET }}" \
+      #     -backend-config="region=${{ env.AWS_REGION }}"
+
+      # - name: Terraform Plan
+      #   id: plan
+      #   run: terraform plan -out=tfplan
+
+      # - name: Verify AWS identity
+      #   run: aws sts get-caller-identity

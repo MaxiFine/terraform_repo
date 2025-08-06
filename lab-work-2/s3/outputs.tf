@@ -6,6 +6,17 @@ output "website_endpoint" {
 }
 
 # modules call type
-output "website_endpoint_module_call_type" {
-  value = module.s3.website_endpoint
+# output "website_endpoint_module_call_type" {
+#   value = module.s3.website_endpoint
+# }
+
+output "name_of_s3_bucket" {
+    description = "Name of the S3 bucket"
+    value       = aws_s3_bucket.mx-bucket.website_domain
+  
+}
+
+output "s3_bucket_id" {
+    description = "ID of the S3 bucket"
+    value       = aws_s3_bucket.mx-bucket.id
 }
