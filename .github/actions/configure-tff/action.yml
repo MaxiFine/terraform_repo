@@ -26,7 +26,7 @@ inputs:
   working-directory:
     description: "Working directory for Terraform commands"
     required: true
-    default: "./lab-work-2"
+    default: "lab-work-2"
 
 runs:
   using: "composite"
