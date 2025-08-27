@@ -97,7 +97,7 @@ resource "aws_route_table" "route_table" {
    gateway_id = aws_internet_gateway.internet_gateway.id
  }
  tags = {
-   Name = "ECS|Route_table"
+   Name = "ECS|Route_table_main"
  }
 }
 
@@ -174,11 +174,11 @@ resource "aws_iam_role_policy_attachment" "ecs_instance_role_policy" {
 }
 
 resource "aws_iam_instance_profile" "ecs_instance_profile" {
-  name = "ecsInstanceRole"
+  name = "MxECSInstanceRole"
   role = aws_iam_role.ecs_instance_role.name
 
   tags = {
-    Name = "ECS|Instance_profile"
+    Name = "MxECSInstanceProfile"
   }
 }
 
@@ -192,7 +192,7 @@ resource "aws_launch_template" "ecs_lt" {
  key_name               = "aws-365-keypair"
  vpc_security_group_ids = [aws_security_group.security_group.id]
  iam_instance_profile {
-   name = "ecsInstanceRole"
+   name = "MxECSInstanceProfile"
  }
 
  block_device_mappings {
@@ -206,7 +206,7 @@ resource "aws_launch_template" "ecs_lt" {
  tag_specifications {
    resource_type = "instance"
    tags = {
-     Name = "ecs-instance"
+     Name = "ECS|Instance|Template"
    }
  }
 
@@ -232,14 +232,14 @@ resource "aws_autoscaling_group" "ecs_asg" {
 }
 
 resource "aws_lb" "ecs_alb" {
- name               = "ecs-alb"
+ name               = "MxECSLoadBalancer"
  internal           = false
  load_balancer_type = "application"
  security_groups    = [aws_security_group.security_group.id]
  subnets            = [aws_subnet.subnet.id, aws_subnet.subnet2.id]
 
  tags = {
-   Name = "ecs-alb"
+   Name = "MxECSLoadBalancer"
  }
 }
 
@@ -255,7 +255,7 @@ resource "aws_lb_listener" "ecs_alb_listener" {
 }
 
 resource "aws_lb_target_group" "ecs_tg" {
- name        = "ecs-target-group"
+ name        = "MxECSTargetGroup"
  port        = 80
  protocol    = "HTTP"
  target_type = "ip"
@@ -266,22 +266,22 @@ resource "aws_lb_target_group" "ecs_tg" {
  }
 
  tags = {
-   Name = "ECS|Target_group"
+   Name = "ECS|TargetGroup"
  }
 }
 
 #########
 ## ECS Cluster
 resource "aws_ecs_cluster" "ecs_cluster" {
-  name = "Mx-ECS-Cluster"
+  name = "MxECSCluster"
   tags = {
-    Name = "ECS|Cluster"
+    Name = "MxECSCluster"
   }
 }
 
 # ECS Capacity Provider
 resource "aws_ecs_capacity_provider" "ecs_capacity_provider" {
- name = "test1"
+ name = "mx-capacity-provider"
 
  auto_scaling_group_provider {
    auto_scaling_group_arn = aws_autoscaling_group.ecs_asg.arn
@@ -295,7 +295,7 @@ resource "aws_ecs_capacity_provider" "ecs_capacity_provider" {
  }
 
  tags = {
-   Name = "ECS|Capacity_provider"
+   Name = "ECS|CapacityProvider"
  }
 }
 
@@ -317,14 +317,14 @@ resource "aws_ecs_cluster_capacity_providers" "example" {
 
 # ECS Task Definition
 resource "aws_ecs_task_definition" "ecs_task_definition" {
- family             = "my-ecs-task"
+ family             = "mxECSFamily"
  network_mode       = "awsvpc"
 #  execution_role_arn = "arn:aws:iam::382828593864:role/ecsTaskExecutionRole"
  execution_role_arn = aws_iam_role.ecs_task_execution_role.arn
 #  execution_role_arn = aws
  cpu                = 256
  tags = {
-   Name = "ECS|Task_definition"
+   Name = "ECSTaskDefinition"
  }
  runtime_platform {
    operating_system_family = "LINUX"
@@ -333,7 +333,8 @@ resource "aws_ecs_task_definition" "ecs_task_definition" {
  container_definitions = jsonencode([
    {
      name      = "dockergs"
-     image     = "public.ecr.aws/f9n5f1l7/dgs:latest"
+    #  image     = "public.ecr.aws/f9n5f1l7/dgs:latest"
+     image     = "docker/getting-started"
      cpu       = 256
      memory    = 512
      essential = true
