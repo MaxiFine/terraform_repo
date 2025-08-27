@@ -136,13 +136,42 @@ resource "aws_security_group" "security_group" {
  }
 }
 
+############
+# Instance Profile
+resource "aws_iam_role" "ecs_instance_role" {
+  name = "ecsInstanceRole"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = {
+          Service = "ec2.amazonaws.com"
+        }
+        Action = "sts:AssumeRole"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "ecs_instance_role_policy" {
+  role       = aws_iam_role.ecs_instance_role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role"
+}
+
+resource "aws_iam_instance_profile" "ecs_instance_profile" {
+  name = "ecsInstanceRole"
+  role = aws_iam_role.ecs_instance_role.name
+}
+
+
 resource "aws_launch_template" "ecs_lt" {
  name_prefix   = "ecs-template"
 #  image_id      = "ami-062c116e449466e7f"
  image_id      = data.aws_ami.ubuntu.id
  instance_type = "t3.micro"
 
- key_name               = "ec2ecsglog"
+ key_name               = "aws-365-keypair"
  vpc_security_group_ids = [aws_security_group.security_group.id]
  iam_instance_profile {
    name = "ecsInstanceRole"
