@@ -192,7 +192,8 @@ resource "aws_launch_template" "ecs_lt" {
  key_name               = "aws-365-keypair"
  vpc_security_group_ids = [aws_security_group.security_group.id]
  iam_instance_profile {
-   name = "MxECSInstanceRole"
+  #  name = "MxECSInstanceRole"
+   name = aws_iam_instance_profile.ecs_instance_profile.name
  }
 
  block_device_mappings {
@@ -210,7 +211,11 @@ resource "aws_launch_template" "ecs_lt" {
    }
  }
 
- user_data = filebase64("${path.module}/ecs.sh")
+#  user_data = filebase64("${path.module}/ecs.sh")
+ user_data = base64encode(
+  templatefile("${path.module}/ecs.sh.tpl", { cluster_name = aws_ecs_cluster.ecs_cluster.name })
+)
+
 }
 
 resource "aws_autoscaling_group" "ecs_asg" {
