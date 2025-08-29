@@ -199,7 +199,8 @@ resource "aws_autoscaling_group" "ecs_asg" {
 # ALB S3 bucket for access logs
 resource "aws_s3_bucket" "alb_logs" {
   bucket = "mx-ecs-alb-logs-${data.aws_caller_identity.current.account_id}"
-  acl    = "private"
+#   acl    = "private"
+#   aws_s3_bucket_acl = "private"
   force_destroy = true
 }
 
