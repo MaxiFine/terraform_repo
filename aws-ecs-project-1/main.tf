@@ -178,7 +178,7 @@ resource "aws_iam_instance_profile" "ecs_instance_profile" {
   role = aws_iam_role.ecs_instance_role.name
 
   tags = {
-    Name = "MxECSInstanceProfile"
+    Name = "MxECSInstanceRole"
   }
 }
 
@@ -192,7 +192,7 @@ resource "aws_launch_template" "ecs_lt" {
  key_name               = "aws-365-keypair"
  vpc_security_group_ids = [aws_security_group.security_group.id]
  iam_instance_profile {
-   name = "MxECSInstanceProfile"
+   name = "MxECSInstanceRole"
  }
 
  block_device_mappings {
@@ -266,7 +266,7 @@ resource "aws_lb_target_group" "ecs_tg" {
  }
 
  tags = {
-   Name = "ECS|TargetGroup"
+   Name = "ECSTargetGroup"
  }
 }
 
@@ -295,7 +295,7 @@ resource "aws_ecs_capacity_provider" "ecs_capacity_provider" {
  }
 
  tags = {
-   Name = "ECS|CapacityProvider"
+   Name = "ECSCapacityProvider"
  }
 }
 
@@ -334,7 +334,8 @@ resource "aws_ecs_task_definition" "ecs_task_definition" {
    {
      name      = "dockergs"
     #  image     = "public.ecr.aws/f9n5f1l7/dgs:latest"
-     image     = "docker/getting-started"
+    #  image     = "docker/getting-started"
+     image     = "docker.io/maxfine22/getting-started:latest"
      cpu       = 256
      memory    = 512
      essential = true
@@ -382,7 +383,7 @@ resource "aws_ecs_service" "ecs_service" {
  }
 
  tags = {
-   Name = "ECS|Service"
+   Name = "ECSService"
  }
 
  depends_on = [aws_autoscaling_group.ecs_asg]
