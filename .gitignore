@@ -5,3 +5,4 @@
 *.terraform*
 *.tfstate*
 learn-terra/.terraform/*
+lab-work-2/terraform.tfvars

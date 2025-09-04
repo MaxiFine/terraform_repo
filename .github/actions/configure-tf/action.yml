@@ -17,7 +17,7 @@ inputs:
   aws-secret-access-key:
     description: "AWS Secret Access Key"
     required: true
-    # default: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+    default: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
   tf-bucket-name:
     description: "S3 bucket name for Terraform state"
     required: true
