@@ -39,7 +39,7 @@ data "aws_ami" "ubuntu" {
     values = ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"]
   }
   filter {
-    name = "virtualization-type"
+    name   = "virtualization-type"
     values = ["hvm"]
   }
   owners = ["099720109477"]
@@ -49,7 +49,7 @@ data "aws_ami" "ubuntu" {
 resource "aws_vpc" "main" {
   cidr_block           = var.vpc_cidr
   enable_dns_hostnames = true
-  tags = { Name = "ECS|main" }
+  tags                 = { Name = "ECS|main" }
 }
 
 resource "aws_subnet" "subnet" {
@@ -57,7 +57,7 @@ resource "aws_subnet" "subnet" {
   cidr_block              = cidrsubnet(aws_vpc.main.cidr_block, 8, 1)
   map_public_ip_on_launch = true
   availability_zone       = data.aws_availability_zones.available.names[0]
-  tags = { Name = "ECS|subnet1" }
+  tags                    = { Name = "ECS|subnet1" }
 }
 
 resource "aws_subnet" "subnet2" {
@@ -65,12 +65,12 @@ resource "aws_subnet" "subnet2" {
   cidr_block              = cidrsubnet(aws_vpc.main.cidr_block, 8, 2)
   map_public_ip_on_launch = true
   availability_zone       = data.aws_availability_zones.available.names[1]
-  tags = { Name = "ECS|subnet2" }
+  tags                    = { Name = "ECS|subnet2" }
 }
 
 resource "aws_internet_gateway" "internet_gateway" {
   vpc_id = aws_vpc.main.id
-  tags = { Name = "ECS|Internet_gateway" }
+  tags   = { Name = "ECS|Internet_gateway" }
 }
 
 resource "aws_route_table" "route_table" {
@@ -128,9 +128,9 @@ resource "aws_iam_role" "ecs_instance_role" {
     Version = "2012-10-17"
     Statement = [
       {
-        Effect = "Allow"
+        Effect    = "Allow"
         Principal = { Service = "ec2.amazonaws.com" }
-        Action = "sts:AssumeRole"
+        Action    = "sts:AssumeRole"
       }
     ]
   })
@@ -169,7 +169,7 @@ resource "aws_launch_template" "ecs_lt" {
 
   tag_specifications {
     resource_type = "instance"
-    tags = { Name = "ECS|Instance|Template" }
+    tags          = { Name = "ECS|Instance|Template" }
   }
 
   # Inject cluster-aware user-data (must save ecs.sh.tpl in this module)
@@ -198,10 +198,23 @@ resource "aws_autoscaling_group" "ecs_asg" {
 
 # ALB S3 bucket for access logs
 resource "aws_s3_bucket" "alb_logs" {
-  bucket = "mx-ecs-alb-logs-${data.aws_caller_identity.current.account_id}"
-#   acl    = "private"
-#   aws_s3_bucket_acl = "private"
+  bucket        = "mx-ecs-alb-logs-${data.aws_caller_identity.current.account_id}"
+#   acl           = "private"
   force_destroy = true
+
+  tags = {
+    Name = "mx-ecs-alb-logs"
+  }
+  
+}
+
+# NEW: separate ownership controls resource
+resource "aws_s3_bucket_ownership_controls" "alb_logs" {
+  bucket = aws_s3_bucket.alb_logs.id
+
+  rule {
+    object_ownership = "BucketOwnerPreferred"
+  }
 }
 
 resource "aws_s3_bucket_policy" "alb_logs_policy" {
@@ -211,15 +224,28 @@ resource "aws_s3_bucket_policy" "alb_logs_policy" {
   "Version": "2012-10-17",
   "Statement": [
     {
+      "Sid": "AWSLogDeliveryWrite",
       "Effect": "Allow",
       "Principal": { "Service": "delivery.logs.amazonaws.com" },
-      "Action": "s3:PutObject",
+      "Action": [
+        "s3:PutObject",
+        "s3:PutObjectAcl"
+      ],
       "Resource": "${aws_s3_bucket.alb_logs.arn}/AWSLogs/${data.aws_caller_identity.current.account_id}/*"
+    },
+    {
+      "Sid": "AWSLogDeliveryAcl",
+      "Effect": "Allow",
+      "Principal": { "Service": "delivery.logs.amazonaws.com" },
+      "Action": "s3:GetBucketAcl",
+      "Resource": "${aws_s3_bucket.alb_logs.arn}"
     }
   ]
 }
 POLICY
 }
+
+
 
 resource "aws_lb" "ecs_alb" {
   name               = "MxECSLoadBalancer"
@@ -234,7 +260,9 @@ resource "aws_lb" "ecs_alb" {
     prefix  = "alb-logs"
   }
 
-  tags = { Name = "MxECSLoadBalancer" }
+  tags       = { Name = "MxECSLoadBalancer" }
+  depends_on = [aws_s3_bucket_policy.alb_logs_policy,
+                aws_s3_bucket_ownership_controls.alb_logs]
 }
 
 resource "aws_lb_listener" "ecs_alb_listener" {
@@ -289,7 +317,7 @@ resource "aws_ecs_capacity_provider" "ecs_capacity_provider" {
 }
 
 resource "aws_ecs_cluster_capacity_providers" "example" {
-  cluster_name = aws_ecs_cluster.ecs_cluster.name
+  cluster_name       = aws_ecs_cluster.ecs_cluster.name
   capacity_providers = [aws_ecs_capacity_provider.ecs_capacity_provider.name]
   default_capacity_provider_strategy {
     base              = 1
@@ -347,7 +375,7 @@ resource "aws_ecs_task_definition" "ecs_task_definition" {
 
 # ECS service (unchanged aside from references)
 resource "aws_ecs_service" "ecs_service" {
-  name            = "my-ecs-service"
+  name            = "mx-ecs-service"
   cluster         = aws_ecs_cluster.ecs_cluster.id
   task_definition = aws_ecs_task_definition.ecs_task_definition.arn
   desired_count   = 2
@@ -360,7 +388,7 @@ resource "aws_ecs_service" "ecs_service" {
   force_new_deployment = true
   placement_constraints { type = "distinctInstance" }
 
-  triggers = { redeployment = timestamp() }
+  #   triggers = { redeployment = timestamp() }
 
   capacity_provider_strategy {
     capacity_provider = aws_ecs_capacity_provider.ecs_capacity_provider.name
@@ -373,7 +401,7 @@ resource "aws_ecs_service" "ecs_service" {
     container_port   = 80
   }
 
-  tags = { Name = "ECSService" }
+  tags       = { Name = "ECSService" }
   depends_on = [aws_autoscaling_group.ecs_asg]
 }
 
@@ -384,9 +412,9 @@ resource "aws_iam_role" "ecs_task_execution_role" {
     Version = "2012-10-17"
     Statement = [
       {
-        Effect = "Allow"
+        Effect    = "Allow"
         Principal = { Service = "ecs-tasks.amazonaws.com" }
-        Action = "sts:AssumeRole"
+        Action    = "sts:AssumeRole"
       }
     ]
   })
