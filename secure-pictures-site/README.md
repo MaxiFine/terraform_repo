@@ -22,9 +22,11 @@ User Request → CloudFront Edge → Lambda@Edge Auth → S3 Origin
 
 ### What Gets Protected:
 - 🖼️ `/gallery.html` - Protected gallery page
-- 📷 `/images/*` - All picture files
+- � `/images/metadata.json` - Gallery configuration and image URLs
 - 🔒 Authentication happens at the edge (faster!)
 - 🌍 Works globally at all CloudFront locations
+
+**Note**: The actual images are served from Unsplash (public CDN) but the gallery page and metadata that references them are protected by authentication.
 
 ### What Stays Public:
 - 🏠 `/` and `/index.html` - Homepage
@@ -82,7 +84,7 @@ User Request → CloudFront Edge → Lambda@Edge Auth → S3 Origin
 #### **Authentication Function** (`auth_function.py`)
 ```python
 # Triggered on: Viewer Request
-# Protects: /gallery* and /images/*
+# Protects: /gallery* and /images/metadata.json
 def lambda_handler(event, context):
     request = event['Records'][0]['cf']['request']
     uri = request['uri']
@@ -99,6 +101,12 @@ def lambda_handler(event, context):
         else:
             return redirect_to_login()  # Block access
 ```
+
+**Smart Design**: Instead of hosting and protecting individual images, we:
+- 🌐 Use beautiful free images from Unsplash 
+- 🔒 Protect the gallery page and metadata file
+- ⚡ Get better performance (images served from Unsplash's global CDN)
+- 💰 Save on storage and bandwidth costs
 
 #### **Security Headers Function** (`security_headers.py`)
 ```python
@@ -146,24 +154,30 @@ Password: admin123
    # Should return 302 redirect to login
    ```
 
-3. **Direct Image Access Test**
+3. **Gallery Protection Test**
    ```bash
-   curl -I https://your-domain/images/sample1.jpg
-   # Should be blocked/redirected
+   curl -I https://your-domain/gallery.html
+   # Should return 302 redirect to login
    ```
 
-4. **Security Headers Test**
+4. **Metadata Protection Test**
+   ```bash
+   curl -I https://your-domain/images/metadata.json
+   # Should be blocked/redirected without authentication
+   ```
+
+5. **Security Headers Test**
    ```bash
    curl -I https://your-domain/ | grep -E "(X-|Strict|Content-Security)"
    # Should show security headers
    ```
 
-5. **Authentication Flow Test**
+6. **Authentication Flow Test**
    - Visit your CloudFront URL
    - Click "View Gallery"
    - Should redirect to login
    - Login with demo credentials
-   - Should access gallery successfully
+   - Should access gallery with beautiful Unsplash images!
 
 ## 🛡️ Security Features
 
@@ -190,11 +204,11 @@ Password: admin123
 ✅ Permissions-Policy
 ```
 
-### 🚫 **Access Controls**
-- Path-based protection (`/gallery*`, `/images/*`)
+### �️ **Access Controls**
+- Path-based protection (`/gallery*`, `/images/metadata.json`)
 - Cookie-based session management
 - Automatic redirect for unauthorized users
-- Protected against direct image linking
+- Smart design: Gallery metadata protected, images served from public CDN
 
 ## 📁 Project Structure
 
@@ -209,14 +223,11 @@ secure-pictures-site/
 ├── website/
 │   ├── index.html            # Public homepage
 │   ├── login.html            # Authentication page
-│   ├── gallery.html          # Protected gallery
+│   ├── gallery.html          # Protected gallery (loads images dynamically)
 │   ├── assets/
 │   │   └── styles.css        # Responsive styling
-│   └── images/
-│       ├── sample1.jpg       # Protected images
-│       ├── sample2.jpg
-│       ├── sample3.jpg
-│       └── sample4.jpg
+│   └── images/               # (Now empty - using public image URLs)
+│       └── metadata.json     # Protected: Contains image URLs and descriptions
 └── README.md                 # This guide
 ```
 
