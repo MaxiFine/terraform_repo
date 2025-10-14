@@ -6,3 +6,9 @@
 *.tfstate*
 learn-terra/.terraform/*
 lab-work-2/terraform.tfvars
+artillery-load-test.yml
+ECS_ARCHITECTURE_GUIDE.md
+monitoring-commands.md
+SCALING_TEST_GUIDE.md
+test-autoscaling.sh
+test-autoscaling.ps1
