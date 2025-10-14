@@ -451,6 +451,25 @@ body {
     gap: 2rem;
 }
 
+.loading-message,
+.error-message {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 3rem;
+    font-size: 1.2rem;
+}
+
+.loading-message {
+    color: #666;
+}
+
+.error-message {
+    color: #dc3545;
+    background: #f8d7da;
+    border: 1px solid #f5c6cb;
+    border-radius: 8px;
+}
+
 .photo-item {
     position: relative;
     border-radius: 10px;
@@ -489,6 +508,11 @@ body {
 
 .photo-overlay h3 {
     margin-bottom: 0.5rem;
+}
+
+.photo-overlay p {
+    font-size: 0.9rem;
+    opacity: 0.9;
 }
 
 /* Modal Styles */

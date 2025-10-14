@@ -33,37 +33,10 @@
 
     <div class="gallery-container">
         <div class="container">
-            <div class="gallery-grid">
-                <div class="photo-item" onclick="openModal('/images/sample1.jpg', 'Mountain Landscape')">
-                    <img src="/images/sample1.jpg" alt="Mountain Landscape" loading="lazy">
-                    <div class="photo-overlay">
-                        <h3>Mountain Landscape</h3>
-                        <p>Beautiful mountain vista</p>
-                    </div>
-                </div>
-                
-                <div class="photo-item" onclick="openModal('/images/sample2.jpg', 'Ocean Sunset')">
-                    <img src="/images/sample2.jpg" alt="Ocean Sunset" loading="lazy">
-                    <div class="photo-overlay">
-                        <h3>Ocean Sunset</h3>
-                        <p>Peaceful ocean at dusk</p>
-                    </div>
-                </div>
-                
-                <div class="photo-item" onclick="openModal('/images/sample3.jpg', 'City Skyline')">
-                    <img src="/images/sample3.jpg" alt="City Skyline" loading="lazy">
-                    <div class="photo-overlay">
-                        <h3>City Skyline</h3>
-                        <p>Urban architecture</p>
-                    </div>
-                </div>
-                
-                <div class="photo-item" onclick="openModal('/images/sample4.jpg', 'Forest Path')">
-                    <img src="/images/sample4.jpg" alt="Forest Path" loading="lazy">
-                    <div class="photo-overlay">
-                        <h3>Forest Path</h3>
-                        <p>Serene woodland trail</p>
-                    </div>
+            <div id="galleryGrid" class="gallery-grid">
+                <!-- Images will be loaded dynamically from metadata -->
+                <div class="loading-message">
+                    <p>🔄 Loading your secure gallery...</p>
                 </div>
             </div>
         </div>
@@ -147,20 +120,59 @@
         document.addEventListener('DOMContentLoaded', function() {
             checkAuthStatus();
             displayUserInfo();
-            
-            // Add error handling for images
-            const images = document.querySelectorAll('.photo-item img');
-            images.forEach(img => {
-                img.addEventListener('error', function() {
-                    this.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"><rect width="400" height="300" fill="%23f0f0f0"/><text x="200" y="150" text-anchor="middle" fill="%23666" font-family="Arial" font-size="16">Protected Image</text></svg>';
-                    this.alt = 'Protected Image - Authentication Required';
+            loadGalleryImages();
+        });
+
+        async function loadGalleryImages() {
+            try {
+                // Load image metadata from S3
+                const response = await fetch('/images/metadata.json');
+                if (!response.ok) {
+                    throw new Error('Failed to load gallery metadata');
+                }
+                
+                const metadata = await response.json();
+                const galleryGrid = document.getElementById('galleryGrid');
+                
+                // Clear loading message
+                galleryGrid.innerHTML = '';
+                
+                // Create gallery items from metadata
+                metadata.images.forEach((imageData, index) => {
+                    const photoItem = createPhotoItem(imageData, index);
+                    galleryGrid.appendChild(photoItem);
                 });
                 
-                img.addEventListener('load', function() {
-                    console.log('Image loaded successfully:', this.src);
-                });
-            });
-        });
+            } catch (error) {
+                console.error('Error loading gallery:', error);
+                document.getElementById('galleryGrid').innerHTML = `
+                    <div class="error-message">
+                        <p>❌ Error loading gallery. Please try again later.</p>
+                    </div>
+                `;
+            }
+        }
+
+        function createPhotoItem(imageData, index) {
+            const photoItem = document.createElement('div');
+            photoItem.className = 'photo-item';
+            photoItem.onclick = () => openModal(imageData.url, imageData.title, imageData.description);
+            
+            photoItem.innerHTML = `
+                <img src="${imageData.url}" alt="${imageData.title}" loading="lazy" onerror="handleImageError(this)">
+                <div class="photo-overlay">
+                    <h3>${imageData.title}</h3>
+                    <p>${imageData.description}</p>
+                </div>
+            `;
+            
+            return photoItem;
+        }
+
+        function handleImageError(img) {
+            img.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"><rect width="400" height="300" fill="%23f0f0f0"/><text x="200" y="150" text-anchor="middle" fill="%23666" font-family="Arial" font-size="16">Image Unavailable</text></svg>';
+            img.alt = 'Image temporarily unavailable';
+        }
 
         function checkAuthStatus() {
             const authToken = getCookie('auth_token');
@@ -203,13 +215,13 @@
             }
         }
 
-        function openModal(imageSrc, title) {
+        function openModal(imageSrc, title, description) {
             currentImageUrl = imageSrc;
             currentImageTitle = title;
             
             document.getElementById('modalImage').src = imageSrc;
             document.getElementById('modalTitle').textContent = title;
-            document.getElementById('modalDescription').textContent = `High-resolution view of ${title}`;
+            document.getElementById('modalDescription').textContent = description || `High-resolution view of ${title}`;
             document.getElementById('photoModal').style.display = 'block';
             document.body.style.overflow = 'hidden';
         }
