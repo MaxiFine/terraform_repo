@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About Lambda@Edge Demo</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+            color: white;
+            line-height: 1.6;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+        h1 {
+            color: #ecf0f1;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        h2 {
+            color: #3498db;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        .info-section {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 10px;
+            border-left: 4px solid #e74c3c;
+        }
+        .code-block {
+            background: #2c3e50;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            overflow-x: auto;
+            margin: 15px 0;
+        }
+        .highlight {
+            background: #f39c12;
+            color: #2c3e50;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .back-link {
+            display: inline-block;
+            background: #e74c3c;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+        .back-link:hover {
+            background: #c0392b;
+        }
+        ul li {
+            margin: 10px 0;
+        }
+        .architecture-diagram {
+            text-align: center;
+            font-family: monospace;
+            background: rgba(0,0,0,0.3);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌐 About Lambda@Edge Demo</h1>
+        
+        <div class="info-section">
+            <h2>What is Lambda@Edge?</h2>
+            <p>
+                <span class="highlight">Lambda@Edge</span> is an extension of AWS Lambda that runs your code at AWS CloudFront edge locations worldwide. 
+                This enables you to customize content delivery and reduce latency by executing code closer to your users.
+            </p>
+        </div>
+
+        <div class="info-section">
+            <h2>🏗️ Architecture Overview</h2>
+            <div class="architecture-diagram">
+User Request → CloudFront Edge Location → Lambda@Edge → Origin (S3)
+     ↑                    ↓                       ↓           ↓
+   Response ←──── Lambda@Edge Processing ←─── Content ←────────┘
+            </div>
+            <p>
+                This demo demonstrates a complete Lambda@Edge setup with:
+            </p>
+            <ul>
+                <li><strong>S3 Static Website:</strong> Hosts our demo content</li>
+                <li><strong>CloudFront Distribution:</strong> Global CDN with edge locations</li>
+                <li><strong>Lambda@Edge Functions:</strong> Process requests and responses at the edge</li>
+                <li><strong>Security Headers:</strong> Automatically added to all responses</li>
+                <li><strong>A/B Testing:</strong> Dynamic content routing based on user attributes</li>
+            </ul>
+        </div>
+
+        <div class="info-section">
+            <h2>🚀 Lambda@Edge Functions in This Demo</h2>
+            
+            <h3>1. Security Headers Function (Origin Response)</h3>
+            <div class="code-block">
+Trigger: Origin Response
+Purpose: Add security headers to all responses
+Headers Added:
+- Strict-Transport-Security
+- Content-Security-Policy  
+- X-Content-Type-Options
+- X-Frame-Options
+- X-XSS-Protection
+- Referrer-Policy
+            </div>
+
+            <h3>2. A/B Testing Function (Viewer Request)</h3>
+            <div class="code-block">
+Trigger: Viewer Request
+Purpose: Route users to different page versions
+Logic:
+- Generate consistent user ID
+- Hash-based variant assignment (50/50 split)
+- Modify request URI based on variant
+- Add tracking headers
+            </div>
+        </div>
+
+        <div class="info-section">
+            <h2>🔧 Technical Implementation</h2>
+            <p>This demo uses Terraform to provision:</p>
+            <ul>
+                <li><strong>AWS Provider:</strong> Multiple provider instances for different regions</li>
+                <li><strong>S3 Bucket:</strong> Static website hosting with proper CORS and policies</li>
+                <li><strong>CloudFront:</strong> Distribution with origin access identity</li>
+                <li><strong>Lambda Functions:</strong> Edge-optimized Node.js functions</li>
+                <li><strong>IAM Roles:</strong> Proper permissions for Lambda@Edge execution</li>
+            </ul>
+        </div>
+
+        <div class="info-section">
+            <h2>🧪 Testing the Demo</h2>
+            <p>You can test various Lambda@Edge features:</p>
+            <ul>
+                <li><strong>Security Headers:</strong> Use browser dev tools or curl to inspect response headers</li>
+                <li><strong>A/B Testing:</strong> Clear cookies and refresh to potentially see different versions</li>
+                <li><strong>Geo-location:</strong> Use VPN or simulate headers to test location-based features</li>
+                <li><strong>Performance:</strong> Compare response times from different global locations</li>
+            </ul>
+            
+            <div class="code-block">
+# Test with curl
+curl -I https://your-cloudfront-domain.cloudfront.net
+curl -H "CloudFront-Viewer-Country: GB" https://your-domain/
+
+# Check security headers
+curl -s -D- https://your-domain/ | grep -E "(X-|Strict|Content-Security)"
+            </div>
+        </div>
+
+        <div class="info-section">
+            <h2>📊 Real-World Use Cases</h2>
+            <ul>
+                <li><strong>A/B Testing:</strong> Test different page layouts, features, or content</li>
+                <li><strong>Security:</strong> Add headers, validate tokens, implement rate limiting</li>
+                <li><strong>Personalization:</strong> Customize content based on location, device, or user attributes</li>
+                <li><strong>SEO:</strong> Modify headers, redirects, or content for search engines</li>
+                <li><strong>Performance:</strong> Optimize images, compress content, implement caching strategies</li>
+                <li><strong>Authentication:</strong> Implement JWT validation at the edge</li>
+                <li><strong>Bot Detection:</strong> Identify and handle bot traffic</li>
+            </ul>
+        </div>
+
+        <div class="info-section">
+            <h2>⚠️ Important Considerations</h2>
+            <ul>
+                <li><strong>Region Requirement:</strong> Lambda@Edge functions must be created in us-east-1</li>
+                <li><strong>Memory Limits:</strong> 128MB for viewer request/response, 1GB for origin request/response</li>
+                <li><strong>Timeout Limits:</strong> 5 seconds for viewer events, 30 seconds for origin events</li>
+                <li><strong>No VPC Access:</strong> Lambda@Edge functions cannot access VPC resources</li>
+                <li><strong>Environment Variables:</strong> Not supported in Lambda@Edge</li>
+                <li><strong>Deployment Time:</strong> Can take 15-30 minutes to propagate globally</li>
+            </ul>
+        </div>
+
+        <a href="/" class="back-link">← Back to Demo</a>
+    </div>
+
+    <script>
+        // Add some interactive elements
+        console.log('Lambda@Edge Demo - About Page Loaded');
+        console.log('Current timestamp:', new Date().toISOString());
+        console.log('User agent:', navigator.userAgent);
+        
+        // Display page load time
+        window.addEventListener('load', function() {
+            const loadTime = performance.now();
+            console.log(`Page loaded in ${loadTime.toFixed(2)}ms`);
+        });
+    </script>
+</body>
+</html>

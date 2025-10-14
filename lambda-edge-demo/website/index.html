@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lambda@Edge Demo - Version A</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        .version-badge {
+            background: #ff6b6b;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+        .feature-card {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+        }
+        .demo-section {
+            margin: 30px 0;
+        }
+        .test-button {
+            background: #4ecdc4;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 16px;
+        }
+        .test-button:hover {
+            background: #45b7b8;
+        }
+        .info-box {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 50px;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="version-badge">VERSION A</div>
+        <h1>🚀 Lambda@Edge Demo</h1>
+        <p>Experience the power of edge computing with AWS Lambda@Edge</p>
+    </div>
+
+    <div class="feature-card">
+        <h2>🔒 Security Headers</h2>
+        <p>This page is protected by Lambda@Edge security headers including:</p>
+        <ul>
+            <li>Content Security Policy (CSP)</li>
+            <li>Strict Transport Security (HSTS)</li>
+            <li>X-Frame-Options</li>
+            <li>X-Content-Type-Options</li>
+            <li>XSS Protection</li>
+        </ul>
+        <button class="test-button" onclick="checkHeaders()">Check Security Headers</button>
+    </div>
+
+    <div class="feature-card">
+        <h2>🧪 A/B Testing</h2>
+        <p>You are seeing <strong>Version A</strong> of this page. Lambda@Edge determines which version you see based on a consistent hash of your user ID.</p>
+        <div class="info-box">
+            <strong>Version A Features:</strong>
+            <ul>
+                <li>Purple gradient background</li>
+                <li>Red version badge</li>
+                <li>Teal buttons</li>
+            </ul>
+        </div>
+        <button class="test-button" onclick="refreshPage()">Refresh to Test</button>
+    </div>
+
+    <div class="feature-card">
+        <h2>🌍 Geo-Location Processing</h2>
+        <p>Lambda@Edge can process requests differently based on your location.</p>
+        <div class="info-box">
+            <strong>Your Request Info:</strong><br>
+            <span id="locationInfo">Loading location data...</span>
+        </div>
+        <button class="test-button" onclick="simulateGeoTest()">Simulate Different Locations</button>
+    </div>
+
+    <div class="demo-section">
+        <h2>📊 Edge Performance</h2>
+        <div class="info-box">
+            <strong>Lambda@Edge Benefits:</strong>
+            <ul>
+                <li>Reduced latency by processing at edge locations</li>
+                <li>Improved user experience</li>
+                <li>Dynamic content modification</li>
+                <li>Real-time personalization</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>Powered by AWS Lambda@Edge | <a href="/about.html" style="color: #4ecdc4;">Learn More</a></p>
+        <p>Processing Time: <span id="timestamp">Loading...</span></p>
+    </div>
+
+    <script>
+        // Check security headers
+        function checkHeaders() {
+            fetch(window.location.href, { method: 'HEAD' })
+                .then(response => {
+                    const headers = [];
+                    for (let [key, value] of response.headers.entries()) {
+                        if (key.toLowerCase().includes('x-') || 
+                            key.toLowerCase().includes('content-security') ||
+                            key.toLowerCase().includes('strict-transport')) {
+                            headers.push(`${key}: ${value}`);
+                        }
+                    }
+                    alert('Security Headers Found:\\n' + headers.join('\\n'));
+                })
+                .catch(err => console.error('Error checking headers:', err));
+        }
+
+        // Refresh page for A/B testing
+        function refreshPage() {
+            // Clear cookies and refresh
+            document.cookie = "userId=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+            location.reload();
+        }
+
+        // Simulate geo testing
+        function simulateGeoTest() {
+            const locations = ['US', 'GB', 'DE', 'JP', 'AU'];
+            const randomLocation = locations[Math.floor(Math.random() * locations.length)];
+            alert(`Simulating request from: ${randomLocation}\\n\\nIn a real scenario, Lambda@Edge would:\\n- Modify content based on country\\n- Apply geo-specific rules\\n- Redirect to localized pages`);
+        }
+
+        // Display timestamp
+        document.getElementById('timestamp').textContent = new Date().toLocaleString();
+        
+        // Display location info
+        document.getElementById('locationInfo').innerHTML = 
+            `Browser: ${navigator.userAgent.split(' ')[0]}<br>` +
+            `Timestamp: ${new Date().toISOString()}<br>` +
+            `Page Version: A`;
+    </script>
+</body>
+</html>
