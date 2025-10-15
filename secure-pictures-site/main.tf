@@ -16,6 +16,7 @@ provider "aws" {
 # Primary provider
 provider "aws" {
   region = var.aws_region
+  profile = "awscc"
 }
 
 # S3 bucket for website content
@@ -62,13 +63,9 @@ resource "aws_s3_bucket_public_access_block" "pictures_website_pab" {
   restrict_public_buckets = true
 }
 
-# CloudFront Origin Access Control
-resource "aws_cloudfront_origin_access_control" "pictures_website_oac" {
-  name                              = "secure-pictures-site-oac"
-  description                       = "OAC for secure pictures website"
-  origin_access_control_origin_type = "s3"
-  signing_behavior                  = "always"
-  signing_protocol                  = "sigv4"
+# CloudFront Origin Access Identity (OAI) - Alternative to OAC for compatibility
+resource "aws_cloudfront_origin_access_identity" "pictures_website_oai" {
+  comment = "OAI for secure pictures website"
 }
 
 # Upload website files
@@ -207,9 +204,12 @@ data "archive_file" "security_headers_zip" {
 # CloudFront Distribution with Lambda@Edge authentication
 resource "aws_cloudfront_distribution" "pictures_website_distribution" {
   origin {
-    domain_name              = aws_s3_bucket.pictures_website.bucket_regional_domain_name
-    origin_id                = "S3-${aws_s3_bucket.pictures_website.id}"
-    origin_access_control_id = aws_cloudfront_origin_access_control.pictures_website_oac.id
+    domain_name = aws_s3_bucket.pictures_website.bucket_regional_domain_name
+    origin_id   = "S3-${aws_s3_bucket.pictures_website.id}"
+
+    s3_origin_config {
+      origin_access_identity = aws_cloudfront_origin_access_identity.pictures_website_oai.cloudfront_access_identity_path
+    }
   }
 
   enabled             = true
@@ -327,7 +327,7 @@ resource "aws_cloudfront_distribution" "pictures_website_distribution" {
   }
 }
 
-# S3 bucket policy to allow CloudFront access
+# S3 bucket policy to allow CloudFront access via OAI
 resource "aws_s3_bucket_policy" "pictures_website_policy" {
   bucket = aws_s3_bucket.pictures_website.id
 
@@ -335,18 +335,13 @@ resource "aws_s3_bucket_policy" "pictures_website_policy" {
     Version = "2012-10-17"
     Statement = [
       {
-        Sid    = "AllowCloudFrontServicePrincipal"
+        Sid    = "AllowCloudFrontOAIAccess"
         Effect = "Allow"
         Principal = {
-          Service = "cloudfront.amazonaws.com"
+          AWS = aws_cloudfront_origin_access_identity.pictures_website_oai.iam_arn
         }
         Action   = "s3:GetObject"
         Resource = "${aws_s3_bucket.pictures_website.arn}/*"
-        Condition = {
-          StringEquals = {
-            "AWS:SourceArn" = aws_cloudfront_distribution.pictures_website_distribution.arn
-          }
-        }
       }
     ]
   })
