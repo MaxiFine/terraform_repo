@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Pictures - Your Private Photo Gallery</title>
+    <link rel="stylesheet" href="/assets/styles.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <h2>📸 Secure Pictures</h2>
+            </div>
+            <div class="nav-menu">
+                <a href="/" class="nav-link active">Home</a>
+                <a href="/gallery.html" class="nav-link">Gallery</a>
+                <a href="/login.html" class="nav-link">Login</a>
+            </div>
+        </div>
+    </nav>
+
+    <header class="hero">
+        <div class="hero-content">
+            <h1>Welcome to Secure Pictures</h1>
+            <p class="hero-subtitle">Your premium private photo gallery protected by AWS Lambda@Edge</p>
+            <div class="hero-buttons">
+                <a href="/gallery.html" class="btn btn-primary">View Gallery</a>
+                <a href="/login.html" class="btn btn-secondary">Login</a>
+            </div>
+        </div>
+        <div class="hero-image">
+            <div class="camera-icon">📷</div>
+        </div>
+    </header>
+
+    <section class="features">
+        <div class="container">
+            <h2>Why Choose Secure Pictures?</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🔒</div>
+                    <h3>Secure Authentication</h3>
+                    <p>Advanced Lambda@Edge authentication protects your private photos from unauthorized access.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">⚡</div>
+                    <h3>Lightning Fast</h3>
+                    <p>Global CloudFront CDN ensures your photos load instantly from anywhere in the world.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🛡️</div>
+                    <h3>Enhanced Security</h3>
+                    <p>Security headers and edge processing provide enterprise-grade protection for your content.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🌍</div>
+                    <h3>Global Access</h3>
+                    <p>Access your photos securely from anywhere with our worldwide edge location network.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="demo-info">
+        <div class="container">
+            <div class="demo-box">
+                <h2>🚀 Lambda@Edge Demo</h2>
+                <p>This website demonstrates real-world Lambda@Edge authentication and security:</p>
+                <ul>
+                    <li><strong>Public Access:</strong> This homepage is accessible to everyone</li>
+                    <li><strong>Protected Gallery:</strong> The gallery requires authentication</li>
+                    <li><strong>Secure Images:</strong> Individual photos are protected from direct access</li>
+                    <li><strong>Security Headers:</strong> All responses include comprehensive security headers</li>
+                </ul>
+                
+                <div class="test-credentials">
+                    <h3>Demo Credentials</h3>
+                    <div class="credentials-grid">
+                        <div class="credential-item">
+                            <strong>Username:</strong> demo<br>
+                            <strong>Password:</strong> password123
+                        </div>
+                        <div class="credential-item">
+                            <strong>Username:</strong> admin<br>
+                            <strong>Password:</strong> admin123
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="how-it-works">
+        <div class="container">
+            <h2>How Lambda@Edge Authentication Works</h2>
+            <div class="steps-grid">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <h3>Request Interception</h3>
+                    <p>Lambda@Edge function intercepts requests to protected paths (/gallery*, /images/*)</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <h3>Authentication Check</h3>
+                    <p>Python function validates authentication tokens from user cookies</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <h3>Access Decision</h3>
+                    <p>Valid users access content; others are redirected to login page</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <h3>Security Headers</h3>
+                    <p>All responses get security headers added by second Lambda@Edge function</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>Secure Pictures</h3>
+                    <p>Powered by AWS Lambda@Edge, CloudFront, and S3</p>
+                </div>
+                <div class="footer-section">
+                    <h3>Demo Features</h3>
+                    <ul>
+                        <li>Python Lambda@Edge functions</li>
+                        <li>JWT-like token authentication</li>
+                        <li>Security header injection</li>
+                        <li>Protected content delivery</li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h3>Try It Out</h3>
+                    <p>Click "View Gallery" to test the authentication system</p>
+                    <a href="/gallery.html" class="btn btn-small">Test Authentication →</a>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 Secure Pictures Demo - Built with Terraform and Lambda@Edge</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Add some interactivity
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check authentication status
+            const checkAuthStatus = () => {
+                const authToken = getCookie('auth_token');
+                const navLinks = document.querySelectorAll('.nav-link');
+                
+                if (authToken) {
+                    // User is logged in - could modify UI accordingly
+                    console.log('User appears to be authenticated');
+                } else {
+                    console.log('User not authenticated');
+                }
+            };
+            
+            const getCookie = (name) => {
+                const value = `; ${document.cookie}`;
+                const parts = value.split(`; ${name}=`);
+                if (parts.length === 2) return parts.pop().split(';').shift();
+                return null;
+            };
+            
+            checkAuthStatus();
+            
+            // Add click tracking
+            document.querySelectorAll('a[href="/gallery.html"]').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    console.log('User attempting to access gallery');
+                });
+            });
+            
+            // Display current time and security info
+            const securityInfo = document.createElement('div');
+            securityInfo.className = 'security-info';
+            securityInfo.innerHTML = `
+                <small>
+                    🔒 Page loaded securely at ${new Date().toLocaleTimeString()}
+                    | Protected by Lambda@Edge
+                </small>
+            `;
+            document.body.appendChild(securityInfo);
+        });
+    </script>
+</body>
+</html>

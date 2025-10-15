@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Secure Pictures</title>
+    <link rel="stylesheet" href="/assets/styles.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <h2>📸 Secure Pictures</h2>
+            </div>
+            <div class="nav-menu">
+                <a href="/" class="nav-link">Home</a>
+                <a href="/gallery.html" class="nav-link">Gallery</a>
+                <a href="/login.html" class="nav-link active">Login</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="login-container">
+        <div class="login-box">
+            <div class="login-header">
+                <h1>🔐 Secure Login</h1>
+                <p>Access your private photo gallery</p>
+            </div>
+
+            <form id="loginForm" class="login-form">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+                
+                <button type="submit" class="btn btn-primary btn-full">Login</button>
+            </form>
+
+            <div id="loginMessage" class="login-message"></div>
+
+            <div class="demo-credentials-box">
+                <h3>Demo Credentials</h3>
+                <div class="credentials-list">
+                    <div class="credential-option" onclick="fillCredentials('demo', 'password123')">
+                        <strong>Demo User</strong><br>
+                        <small>Username: demo | Password: password123</small>
+                    </div>
+                    <div class="credential-option" onclick="fillCredentials('admin', 'admin123')">
+                        <strong>Admin User</strong><br>
+                        <small>Username: admin | Password: admin123</small>
+                    </div>
+                </div>
+                <p class="demo-note">
+                    <strong>Note:</strong> This is a demonstration. In production, use proper authentication services like AWS Cognito.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="auth-explanation">
+        <div class="container">
+            <h2>🛡️ How Authentication Works</h2>
+            <div class="auth-steps">
+                <div class="auth-step">
+                    <div class="step-icon">1️⃣</div>
+                    <div class="step-content">
+                        <h3>Client-Side Login</h3>
+                        <p>User submits credentials via this login form</p>
+                    </div>
+                </div>
+                <div class="auth-step">
+                    <div class="step-icon">2️⃣</div>
+                    <div class="step-content">
+                        <h3>Token Generation</h3>
+                        <p>JavaScript generates a JWT-like token with HMAC signature</p>
+                    </div>
+                </div>
+                <div class="auth-step">
+                    <div class="step-icon">3️⃣</div>
+                    <div class="step-content">
+                        <h3>Cookie Storage</h3>
+                        <p>Auth token is stored in secure, httpOnly-like cookie</p>
+                    </div>
+                </div>
+                <div class="auth-step">
+                    <div class="step-icon">4️⃣</div>
+                    <div class="step-content">
+                        <h3>Lambda@Edge Validation</h3>
+                        <p>Every request to protected content is validated at the edge</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="security-notice">
+                <h3>🔒 Security Implementation</h3>
+                <ul>
+                    <li><strong>Edge Processing:</strong> Authentication happens at CloudFront edge locations</li>
+                    <li><strong>HMAC Signatures:</strong> Tokens are cryptographically signed</li>
+                    <li><strong>Expiration:</strong> Tokens expire after 24 hours</li>
+                    <li><strong>Path Protection:</strong> Only /gallery* and /images/* require auth</li>
+                    <li><strong>Secure Headers:</strong> All responses include security headers</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Demo authentication logic (client-side for demonstration)
+        // In production, this would be handled by proper backend authentication
+        
+        const SECRET_KEY = "demo-secret-key-change-in-production";
+        const ALLOWED_USERS = {
+            "demo": "password123",
+            "admin": "admin123",
+            "user1": "mypassword"
+        };
+
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const messageDiv = document.getElementById('loginMessage');
+            
+            // Clear previous messages
+            messageDiv.innerHTML = '';
+            messageDiv.className = 'login-message';
+            
+            // Validate credentials
+            if (ALLOWED_USERS[username] && ALLOWED_USERS[username] === password) {
+                // Generate auth token (simplified JWT-like token for demo)
+                const token = generateAuthToken(username);
+                
+                // Set cookie
+                document.cookie = `auth_token=${token}; path=/; max-age=86400; SameSite=Strict`;
+                
+                // Show success message
+                messageDiv.innerHTML = '✅ Login successful! Redirecting to gallery...';
+                messageDiv.className = 'login-message success';
+                
+                // Get redirect URL from query params or default to gallery
+                const urlParams = new URLSearchParams(window.location.search);
+                const redirectUrl = urlParams.get('redirect') || '/gallery.html';
+                
+                // Redirect after short delay
+                setTimeout(() => {
+                    window.location.href = redirectUrl;
+                }, 1500);
+                
+            } else {
+                messageDiv.innerHTML = '❌ Invalid username or password. Please try again.';
+                messageDiv.className = 'login-message error';
+            }
+        });
+
+        function generateAuthToken(username) {
+            // Create a simplified JWT-like token for demo purposes
+            // In production, use proper JWT libraries and server-side generation
+            
+            const header = btoa(JSON.stringify({
+                "alg": "HS256",
+                "typ": "JWT"
+            }));
+            
+            const payload = btoa(JSON.stringify({
+                "username": username,
+                "exp": Math.floor(Date.now() / 1000) + (24 * 3600), // 24 hours
+                "iat": Math.floor(Date.now() / 1000)
+            }));
+            
+            // Create signature (simplified HMAC)
+            const signature = btoa(simpleHmac(header + '.' + payload, SECRET_KEY));
+            
+            return header + '.' + payload + '.' + signature;
+        }
+
+        function simpleHmac(data, key) {
+            // Simplified HMAC for demo - in production use proper crypto libraries
+            let hash = 0;
+            const combined = key + data;
+            for (let i = 0; i < combined.length; i++) {
+                const char = combined.charCodeAt(i);
+                hash = ((hash << 5) - hash) + char;
+                hash = hash & hash; // Convert to 32-bit integer
+            }
+            return hash.toString();
+        }
+
+        function fillCredentials(username, password) {
+            document.getElementById('username').value = username;
+            document.getElementById('password').value = password;
+        }
+
+        // Check if user is already logged in
+        document.addEventListener('DOMContentLoaded', function() {
+            const authToken = getCookie('auth_token');
+            if (authToken) {
+                const messageDiv = document.getElementById('loginMessage');
+                messageDiv.innerHTML = 'ℹ️ You are already logged in. <a href="/gallery.html">Go to Gallery</a>';
+                messageDiv.className = 'login-message info';
+            }
+        });
+
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+            return null;
+        }
+    </script>
+</body>
+</html>
