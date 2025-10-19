@@ -1,3 +1,4 @@
+# Simplified Lambda@Edge Demo - without OAI due to permission constraints
 terraform {
   required_providers {
     aws = {
@@ -7,27 +8,24 @@ terraform {
   }
 }
 
-# Lambda@Edge must be created in us-east-1
+# Default provider for most resources
 provider "aws" {
-  region  = "us-east-1"
-  alias   = "lambda_edge"
-  profile = "awscc"
+  region = var.aws_region
 }
 
-# Primary provider
+# Lambda@Edge must be in us-east-1
 provider "aws" {
-  region  = var.aws_region
-  profile = "awscc"
+  alias  = "lambda_edge"
+  region = "us-east-1"
 }
 
-# S3 bucket for website content
+# S3 bucket for website content (public for demo)
 resource "aws_s3_bucket" "pictures_website" {
   bucket = "secure-pictures-site-${random_string.bucket_suffix.result}"
   
   tags = {
     Name        = "Secure Pictures Website"
-    Environment = var.environment
-    Purpose     = "Lambda@Edge Authentication Demo"
+    Project     = "lambda-edge-auth"
   }
 }
 
@@ -44,84 +42,92 @@ resource "aws_s3_bucket_versioning" "pictures_website_versioning" {
   }
 }
 
-resource "aws_s3_bucket_server_side_encryption_configuration" "pictures_website_encryption" {
-  bucket = aws_s3_bucket.pictures_website.id
-
-  rule {
-    apply_server_side_encryption_by_default {
-      sse_algorithm = "AES256"
-    }
-  }
-}
-
-# Block public access - only CloudFront should access
+# Enable public access for demo (not recommended for production)
 resource "aws_s3_bucket_public_access_block" "pictures_website_pab" {
   bucket = aws_s3_bucket.pictures_website.id
 
-  block_public_acls       = true
-  block_public_policy     = true
-  ignore_public_acls      = true
-  restrict_public_buckets = true
+  block_public_acls       = false
+  block_public_policy     = false
+  ignore_public_acls      = false
+  restrict_public_buckets = false
 }
 
-# CloudFront Origin Access Identity (OAI) - Alternative to OAC for compatibility
-resource "aws_cloudfront_origin_access_identity" "pictures_website_oai" {
-  comment = "OAI for secure pictures website"
+# Public read policy for S3 bucket (demo only)
+resource "aws_s3_bucket_policy" "pictures_website_policy" {
+  bucket = aws_s3_bucket.pictures_website.id
+  depends_on = [aws_s3_bucket_public_access_block.pictures_website_pab]
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid       = "PublicReadGetObject"
+        Effect    = "Allow"
+        Principal = "*"
+        Action    = "s3:GetObject"
+        Resource  = "${aws_s3_bucket.pictures_website.arn}/*"
+      }
+    ]
+  })
+}
+
+# Configure S3 bucket as static website
+resource "aws_s3_bucket_website_configuration" "pictures_website_config" {
+  bucket = aws_s3_bucket.pictures_website.id
+
+  index_document {
+    suffix = "index.html"
+  }
+
+  error_document {
+    key = "error.html"
+  }
 }
 
 # Upload website files
 resource "aws_s3_object" "index_html" {
   bucket       = aws_s3_bucket.pictures_website.id
   key          = "index.html"
-  content      = file("${path.module}/website/index.html")
   content_type = "text/html"
-  etag         = filemd5("${path.module}/website/index.html")
+  content = templatefile("${path.module}/website/index.html", {
+    cloudfront_domain = aws_cloudfront_distribution.pictures_website_cdn.domain_name
+  })
 }
 
 resource "aws_s3_object" "login_html" {
   bucket       = aws_s3_bucket.pictures_website.id
   key          = "login.html"
-  content      = file("${path.module}/website/login.html")
   content_type = "text/html"
-  etag         = filemd5("${path.module}/website/login.html")
+  content = file("${path.module}/website/login.html")
 }
 
 resource "aws_s3_object" "gallery_html" {
   bucket       = aws_s3_bucket.pictures_website.id
   key          = "gallery.html"
-  content      = file("${path.module}/website/gallery.html")
   content_type = "text/html"
-  etag         = filemd5("${path.module}/website/gallery.html")
+  content = file("${path.module}/website/gallery.html")
 }
 
 resource "aws_s3_object" "styles_css" {
   bucket       = aws_s3_bucket.pictures_website.id
   key          = "assets/styles.css"
-  content      = file("${path.module}/website/assets/styles.css")
   content_type = "text/css"
-  etag         = filemd5("${path.module}/website/assets/styles.css")
+  content = file("${path.module}/website/styles.css")
 }
 
-# Create image metadata file (JSON) that contains the image URLs and info
 resource "aws_s3_object" "images_metadata" {
   bucket       = aws_s3_bucket.pictures_website.id
-  key          = "images/metadata.json"
-  content      = jsonencode({
-    images = var.sample_images
-    last_updated = timestamp()
-  })
+  key          = "data/images.json"
   content_type = "application/json"
-  etag         = md5(jsonencode({
+  content = jsonencode({
     images = var.sample_images
-    last_updated = timestamp()
-  }))
+  })
 }
 
-# IAM role for Lambda@Edge
+# IAM role for Lambda@Edge functions
 resource "aws_iam_role" "lambda_edge_auth_role" {
-  provider = aws.lambda_edge
-  name     = "lambda-edge-auth-role"
-
+  name = "lambda-edge-auth-role"
+  
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -140,176 +146,171 @@ resource "aws_iam_role" "lambda_edge_auth_role" {
 }
 
 resource "aws_iam_role_policy_attachment" "lambda_edge_auth_basic" {
-  provider   = aws.lambda_edge
   role       = aws_iam_role.lambda_edge_auth_role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
-# Lambda@Edge function for authentication
+# Lambda function for authentication (must be in us-east-1)
 resource "aws_lambda_function" "auth_function" {
-  provider         = aws.lambda_edge
-  filename         = "auth_function.zip"
+  provider = aws.lambda_edge
+
+  filename         = "lambda/auth_function.zip"
   function_name    = "pictures-site-auth"
   role            = aws_iam_role.lambda_edge_auth_role.arn
-  handler         = "lambda_function.lambda_handler"
+  handler         = "auth_function.lambda_handler"
   source_code_hash = data.archive_file.auth_function_zip.output_base64sha256
   runtime         = "python3.9"
   timeout         = 5
-
+  
   tags = {
-    Name        = "Pictures Site Auth"
-    Environment = var.environment
-  }
-
-  depends_on = [data.archive_file.auth_function_zip]
-}
-
-# Create ZIP file for auth Lambda function
-data "archive_file" "auth_function_zip" {
-  type        = "zip"
-  output_path = "auth_function.zip"
-  source {
-    content  = file("${path.module}/lambda/auth_function.py")
-    filename = "lambda_function.py"
+    Name    = "Pictures Site Auth Function"
+    Project = "lambda-edge-auth"
   }
 }
 
-# Lambda@Edge function for security headers
+# Lambda function for security headers (must be in us-east-1)
 resource "aws_lambda_function" "security_headers_function" {
-  provider         = aws.lambda_edge
-  filename         = "security_headers.zip"
+  provider = aws.lambda_edge
+  
+  filename         = "lambda/security_headers.zip"
   function_name    = "pictures-site-security-headers"
   role            = aws_iam_role.lambda_edge_auth_role.arn
-  handler         = "lambda_function.lambda_handler"
+  handler         = "security_headers.lambda_handler"
   source_code_hash = data.archive_file.security_headers_zip.output_base64sha256
   runtime         = "python3.9"
   timeout         = 5
-
+  
   tags = {
-    Name        = "Pictures Site Security Headers"
-    Environment = var.environment
+    Name    = "Pictures Site Security Headers Function"
+    Project = "lambda-edge-auth"
   }
+}
 
-  depends_on = [data.archive_file.security_headers_zip]
+# Archive Lambda functions
+data "archive_file" "auth_function_zip" {
+  type        = "zip"
+  source_file = "${path.module}/lambda/auth_function.py"
+  output_path = "${path.module}/lambda/auth_function.zip"
 }
 
 data "archive_file" "security_headers_zip" {
   type        = "zip"
-  output_path = "security_headers.zip"
-  source {
-    content  = file("${path.module}/lambda/security_headers.py")
-    filename = "lambda_function.py"
-  }
+  source_file = "${path.module}/lambda/security_headers.py"
+  output_path = "${path.module}/lambda/security_headers.zip"
 }
 
-# CloudFront Distribution with Lambda@Edge authentication
-resource "aws_cloudfront_distribution" "pictures_website_distribution" {
-  origin {
-    domain_name = aws_s3_bucket.pictures_website.bucket_regional_domain_name
-    origin_id   = "S3-${aws_s3_bucket.pictures_website.id}"
+# CloudFront Distribution (simplified without OAI)
+resource "aws_cloudfront_distribution" "pictures_website_cdn" {
+  depends_on = [
+    aws_lambda_function.auth_function,
+    aws_lambda_function.security_headers_function
+  ]
 
-    s3_origin_config {
-      origin_access_identity = aws_cloudfront_origin_access_identity.pictures_website_oai.cloudfront_access_identity_path
+  origin {
+    domain_name = aws_s3_bucket_website_configuration.pictures_website_config.website_endpoint
+    origin_id   = "S3-${aws_s3_bucket.pictures_website.id}"
+    
+    custom_origin_config {
+      http_port              = 80
+      https_port             = 443
+      origin_protocol_policy = "http-only"
+      origin_ssl_protocols   = ["TLSv1.2"]
     }
   }
 
   enabled             = true
-  is_ipv6_enabled     = true
   default_root_object = "index.html"
-  comment             = "Secure Pictures Website with Lambda@Edge Auth"
+  price_class         = var.cloudfront_price_class
 
-  # Default cache behavior - public content
+  # Default cache behavior (homepage - public)
   default_cache_behavior {
-    allowed_methods        = ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"]
-    cached_methods         = ["GET", "HEAD"]
     target_origin_id       = "S3-${aws_s3_bucket.pictures_website.id}"
-    compress               = true
     viewer_protocol_policy = "redirect-to-https"
+    allowed_methods        = ["GET", "HEAD", "OPTIONS"]
+    cached_methods         = ["GET", "HEAD"]
+    compress               = true
 
     forwarded_values {
       query_string = false
-      headers      = ["Authorization", "CloudFront-Viewer-Country"]
       cookies {
-        forward = "all"
+        forward = "none"
       }
     }
 
     # Add security headers to all responses
     lambda_function_association {
       event_type   = "origin-response"
-      lambda_arn   = aws_lambda_function.security_headers_function.qualified_arn
+      lambda_arn   = "${aws_lambda_function.security_headers_function.arn}:${aws_lambda_function.security_headers_function.version}"
       include_body = false
     }
 
     min_ttl     = 0
-    default_ttl = 86400
-    max_ttl     = 31536000
+    default_ttl = 3600
+    max_ttl     = 86400
   }
 
-  # Protected content - requires authentication
+  # Protected gallery behavior
   ordered_cache_behavior {
-    path_pattern     = "/gallery*"
-    allowed_methods  = ["GET", "HEAD", "OPTIONS"]
-    cached_methods   = ["GET", "HEAD"]
-    target_origin_id = "S3-${aws_s3_bucket.pictures_website.id}"
+    path_pattern           = "/gallery*"
+    target_origin_id       = "S3-${aws_s3_bucket.pictures_website.id}"
+    viewer_protocol_policy = "redirect-to-https"
+    allowed_methods        = ["GET", "HEAD", "OPTIONS"]
+    cached_methods         = ["GET", "HEAD"]
+    compress               = true
 
     forwarded_values {
       query_string = true
-      headers      = ["Authorization", "CloudFront-Viewer-Country", "User-Agent"]
       cookies {
         forward = "all"
       }
     }
 
-    # Authentication check for gallery
+    # Authentication function on viewer request
     lambda_function_association {
       event_type   = "viewer-request"
-      lambda_arn   = aws_lambda_function.auth_function.qualified_arn
+      lambda_arn   = "${aws_lambda_function.auth_function.arn}:${aws_lambda_function.auth_function.version}"
       include_body = false
     }
 
-    # Add security headers
+    # Security headers on response
     lambda_function_association {
       event_type   = "origin-response"
-      lambda_arn   = aws_lambda_function.security_headers_function.qualified_arn
+      lambda_arn   = "${aws_lambda_function.security_headers_function.arn}:${aws_lambda_function.security_headers_function.version}"
       include_body = false
     }
 
-    viewer_protocol_policy = "redirect-to-https"
-    min_ttl                = 0
-    default_ttl            = 0  # Don't cache protected content
-    max_ttl                = 0
+    min_ttl     = 0
+    default_ttl = 0
+    max_ttl     = 0
   }
 
-  # Protected images - requires authentication
+  # Protected images behavior
   ordered_cache_behavior {
-    path_pattern     = "/images/*"
-    allowed_methods  = ["GET", "HEAD"]
-    cached_methods   = ["GET", "HEAD"]
-    target_origin_id = "S3-${aws_s3_bucket.pictures_website.id}"
+    path_pattern           = "/data/*"
+    target_origin_id       = "S3-${aws_s3_bucket.pictures_website.id}"
+    viewer_protocol_policy = "redirect-to-https"
+    allowed_methods        = ["GET", "HEAD", "OPTIONS"]
+    cached_methods         = ["GET", "HEAD"]
+    compress               = true
 
     forwarded_values {
-      query_string = false
-      headers      = ["Authorization", "Referer"]
+      query_string = true
       cookies {
         forward = "all"
       }
     }
 
-    # Authentication check for images
+    # Authentication function
     lambda_function_association {
       event_type   = "viewer-request"
-      lambda_arn   = aws_lambda_function.auth_function.qualified_arn
+      lambda_arn   = "${aws_lambda_function.auth_function.arn}:${aws_lambda_function.auth_function.version}"
       include_body = false
     }
 
-    viewer_protocol_policy = "redirect-to-https"
-    min_ttl                = 0
-    default_ttl            = 3600  # Cache authenticated images for 1 hour
-    max_ttl                = 86400
+    min_ttl     = 0
+    default_ttl = 3600
+    max_ttl     = 86400
   }
-
-  price_class = var.cloudfront_price_class
 
   restrictions {
     geo_restriction {
@@ -322,30 +323,7 @@ resource "aws_cloudfront_distribution" "pictures_website_distribution" {
   }
 
   tags = {
-    Name        = "Secure Pictures Website"
-    Environment = var.environment
-    Purpose     = "Lambda@Edge Authentication Demo"
+    Name    = "Pictures Website CDN"
+    Project = "lambda-edge-auth"
   }
-}
-
-# S3 bucket policy to allow CloudFront access via OAI
-resource "aws_s3_bucket_policy" "pictures_website_policy" {
-  bucket = aws_s3_bucket.pictures_website.id
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Sid    = "AllowCloudFrontOAIAccess"
-        Effect = "Allow"
-        Principal = {
-          AWS = aws_cloudfront_origin_access_identity.pictures_website_oai.iam_arn
-        }
-        Action   = "s3:GetObject"
-        Resource = "${aws_s3_bucket.pictures_website.arn}/*"
-      }
-    ]
-  })
-
-  depends_on = [aws_s3_bucket_public_access_block.pictures_website_pab]
 }
