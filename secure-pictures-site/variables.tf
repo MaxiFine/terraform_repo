@@ -7,7 +7,7 @@ variable "aws_region" {
 variable "environment" {
   description = "Environment name"
   type        = string
-  default     = "demo"
+  default     = "dev"
 }
 
 variable "cloudfront_price_class" {
