@@ -367,8 +367,67 @@ else:
 ### Current Status
 - ✅ **S3 Static Website**: Fully deployed and working
 - ✅ **Lambda Functions**: Created in us-east-1 (ready for Lambda@Edge)
-- ❌ **CloudFront**: Requires additional permissions (can be added later)
+- ✅ **CloudFront**: Ready to deploy (requires correct AWS profile)
 - 🎯 **Demo Purpose**: Perfect for learning Lambda@Edge concepts
+
+### 🔧 Troubleshooting Common Issues
+
+#### AWS Profile/Account Issues
+If you get permission errors like `AccessDenied`, check your AWS profile:
+
+```bash
+# Check current identity
+aws sts get-caller-identity
+
+# List available profiles
+aws configure list-profiles
+
+# Set correct profile (the one used during initial deployment)
+export AWS_PROFILE=awscc          # Linux/Mac
+$env:AWS_PROFILE="awscc"          # Windows PowerShell
+
+# Verify correct account
+aws sts get-caller-identity
+# Should show Account: 382828593864 (or your deployment account)
+```
+
+#### S3 Versioning Errors
+```
+Error: operation error S3: GetBucketVersioning... AccessDenied
+```
+**Root Cause**: Wrong AWS profile - resources were created in different account  
+**Solution**: Set correct AWS profile (see AWS Profile section above)
+
+#### CloudFront Permission Errors
+```
+Error: User is not authorized to perform: cloudfront:CreateDistribution
+```
+**Solutions**:
+1. Use an AWS profile with CloudFront permissions (like `awscc`)
+2. Or continue with S3-only demo (still valuable for learning!)
+
+#### Terraform State Issues
+```bash
+# If terraform seems confused about state:
+terraform refresh
+
+# If resources exist but terraform doesn't know about them:
+terraform import aws_s3_bucket.pictures_website secure-pictures-site-bq5ny1z4
+```
+
+#### Region Issues
+- ✅ Lambda functions must be in `us-east-1` for Lambda@Edge
+- ✅ S3 bucket can be in any region  
+- ✅ Current setup: All resources in `us-east-1`
+
+#### Quick Fix Commands
+```bash
+# Reset to working state
+cd secure-pictures-site
+$env:AWS_PROFILE="awscc"
+terraform refresh
+terraform plan
+```
 
 ### Lambda@Edge Requirements (When Adding CloudFront)
 - **Region**: Functions must be created in `us-east-1` ✅ (Already done!)
@@ -439,17 +498,31 @@ You now have a working demo and Lambda@Edge foundation:
 ## 🔮 Next Steps
 
 ### Immediate (Working Now)
-1. ✅ Visit your live S3 website
-2. ✅ Test the authentication flow
+1. ✅ Visit your live S3 website: `http://secure-pictures-site-bq5ny1z4.s3-website-us-east-1.amazonaws.com`
+2. ✅ Test the authentication flow with demo credentials
 3. ✅ Explore the Lambda functions code
-4. ✅ Understand the architecture
+4. ✅ Understand the serverless architecture
 
-### Future Enhancements (When Ready)
-1. 🔐 **Add CloudFront**: When permissions are available
-2. 🚀 **Deploy Lambda@Edge**: Connect functions to CloudFront
-3. 👥 **Add Cognito**: Proper user management
-4. 🔒 **Add Secrets Manager**: Secure credential storage
-5. 📊 **Add Monitoring**: CloudWatch insights and alarms
+### Deploy Full Lambda@Edge (Optional)
+If you have CloudFront permissions and want the full Lambda@Edge experience:
+
+```bash
+# Ensure correct AWS profile
+$env:AWS_PROFILE="awscc"
+
+# Deploy CloudFront + Lambda@Edge
+terraform apply
+
+# Wait 15-30 minutes for global propagation
+# Then test your CloudFront URL with real edge authentication!
+```
+
+### Future Enhancements
+1. 🔐 **Add CloudFront**: Real Lambda@Edge integration (available now!)
+2. 👥 **Add Cognito**: Proper user management
+3. 🔒 **Add Secrets Manager**: Secure credential storage
+4. 📊 **Add Monitoring**: CloudWatch insights and alarms
+5. 🌍 **Multi-region**: Expand beyond us-east-1
 
 Perfect for demonstrating serverless authentication concepts and Lambda@Edge readiness to your manager! 🚀
 
