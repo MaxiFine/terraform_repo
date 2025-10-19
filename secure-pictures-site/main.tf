@@ -9,13 +9,14 @@ terraform {
 
 # Lambda@Edge must be created in us-east-1
 provider "aws" {
-  region = "us-east-1"
-  alias  = "lambda_edge"
+  region  = "us-east-1"
+  alias   = "lambda_edge"
+  profile = "awscc"
 }
 
 # Primary provider
 provider "aws" {
-  region = var.aws_region
+  region  = var.aws_region
   profile = "awscc"
 }
 
