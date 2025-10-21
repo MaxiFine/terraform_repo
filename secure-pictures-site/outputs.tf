@@ -1,26 +1,26 @@
 output "cloudfront_distribution_id" {
   description = "CloudFront Distribution ID"
-  value       = aws_cloudfront_distribution.pictures_website_distribution.id
+  value       = aws_cloudfront_distribution.pictures_website_cdn.id
 }
 
 output "cloudfront_domain_name" {
   description = "CloudFront Distribution Domain Name"
-  value       = aws_cloudfront_distribution.pictures_website_distribution.domain_name
+  value       = aws_cloudfront_distribution.pictures_website_cdn.domain_name
 }
 
 output "website_url" {
   description = "Website URL"
-  value       = "https://${aws_cloudfront_distribution.pictures_website_distribution.domain_name}"
+  value       = "https://${aws_cloudfront_distribution.pictures_website_cdn.domain_name}"
 }
 
 output "gallery_url" {
   description = "Protected Gallery URL (requires authentication)"
-  value       = "https://${aws_cloudfront_distribution.pictures_website_distribution.domain_name}/gallery.html"
+  value       = "https://${aws_cloudfront_distribution.pictures_website_cdn.domain_name}/gallery.html"
 }
 
 output "login_url" {
   description = "Login Page URL"
-  value       = "https://${aws_cloudfront_distribution.pictures_website_distribution.domain_name}/login.html"
+  value       = "https://${aws_cloudfront_distribution.pictures_website_cdn.domain_name}/login.html"
 }
 
 output "s3_bucket_name" {
@@ -45,8 +45,8 @@ output "test_credentials" {
 output "testing_instructions" {
   description = "Instructions for testing the authentication"
   value = <<-EOT
-    1. Visit the homepage: https://${aws_cloudfront_distribution.pictures_website_distribution.domain_name}
-    2. Try to access gallery directly: https://${aws_cloudfront_distribution.pictures_website_distribution.domain_name}/gallery.html
+    1. Visit the homepage: https://${aws_cloudfront_distribution.pictures_website_cdn.domain_name}
+    2. Try to access gallery directly: https://${aws_cloudfront_distribution.pictures_website_cdn.domain_name}/gallery.html
     3. You should be redirected to login page
     4. Login with credentials:
        - Username: demo
@@ -55,10 +55,10 @@ output "testing_instructions" {
     
     Test commands:
     # Try accessing gallery without auth (should redirect to login)
-    curl -I "https://${aws_cloudfront_distribution.pictures_website_distribution.domain_name}/gallery.html"
+    curl -I "https://${aws_cloudfront_distribution.pictures_website_cdn.domain_name}/gallery.html"
     
     # Try accessing an image directly (should be blocked)
-    curl -I "https://${aws_cloudfront_distribution.pictures_website_distribution.domain_name}/images/sample1.jpg"
+    curl -I "https://${aws_cloudfront_distribution.pictures_website_cdn.domain_name}/data/images.json"
   EOT
 }
 
