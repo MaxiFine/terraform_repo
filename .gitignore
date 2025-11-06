@@ -12,3 +12,5 @@ monitoring-commands.md
 SCALING_TEST_GUIDE.md
 test-autoscaling.sh
 test-autoscaling.ps1
+*.hcl
+
