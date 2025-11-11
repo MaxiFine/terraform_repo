@@ -14,3 +14,12 @@ test-autoscaling.sh
 test-autoscaling.ps1
 *.hcl
 
+tera-multi-env/environments/dev/terraform.tfstate
+tera-multi-env/environments/staging/terraform.tfstate
+tera-multi-env/environments/prod/terraform.tfstate
+tera-multi-env/environments/dev/.terraform
+tera-multi-env/environments/dev/terraform.tfvars
+tera-multi-env/environments/staging/.terraform
+tera-multi-env/environments/prod/.terraform
+tera-multi-env/environments/prod/terraform.tfvars
+

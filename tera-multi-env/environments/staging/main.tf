@@ -14,12 +14,12 @@ resource "aws_lb" "alb" {
 }
 
 resource "aws_instance" "app" {
-  count                  = length(module.vpc.private_subnets)
+  # count                  = length(module.vpc.private_subnets)
   ami                    = "ami-0c55b159cbfafe1f0"
   instance_type          = "t2.micro"
-  subnet_id              = element(module.vpc.private_subnets, count.index)
+  subnet_id              = element(module.vpc.private_subnets, 0)
 
   tags = {
-    Name = "staging-app-${count.index + 1}"
+    Name = "staging-app-server"
   }
 }
