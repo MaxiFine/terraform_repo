@@ -1,5 +1,10 @@
-variable "ami_id" {
-    description = "AMI ID for the EC2 instances"
-    type        = string  
+variable "env" {
+    description = "Environments"
+    type = string
+}
+
+variable "vpc_cidr" {
+    description = "VPC CIDR"
+    type = string  
 }
 
