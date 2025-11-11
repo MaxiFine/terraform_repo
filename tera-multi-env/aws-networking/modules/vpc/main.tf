@@ -6,14 +6,19 @@ resource "aws_vpc" "main" {
   enable_dns_hostnames = true
 
   tags = {
-    Name = "${var.env}-vpc"
+    # Name = "${var.env}-vpc"
+    Name        = "${var.project_name}-vpc"
+      project     = var.project_name
+      Target      = "Test Environment"
   }
 }
 
 resource "aws_internet_gateway" "main" {
   vpc_id = aws_vpc.main.id
   tags = {
-    Name = "${var.env}-igw"
+     Name        = "${var.project_name}-vpc"
+      project     = var.project_name
+      Target      = "Test Environment"
   }
 }
 
@@ -24,7 +29,10 @@ resource "aws_subnet" "public" {
   map_public_ip_on_launch = true
   availability_zone = data.aws_availability_zones.available.names[count.index]
   tags = {
-    Name = "${var.env}-public-${count.index + 1}"
+    # Name = "${var.env}-public-${count.index + 1}"
+     Name        = "${var.project_name}-public-${count.index + 1}"
+      project     = var.project_name
+      Target      = "Test Environment"
   }
 }
 
@@ -34,7 +42,10 @@ resource "aws_subnet" "private" {
   cidr_block = cidrsubnet(var.vpc_cidr, 8, count.index + var.az_count)
   availability_zone = data.aws_availability_zones.available.names[count.index]
   tags = {
-    Name = "${var.env}-private-${count.index + 1}"
+    # Name = "${var.env}-private-${count.index + 1}"
+     Name        = "${var.project_name}-private-${count.index + 1}"
+      project     = var.project_name
+      Target      = "Test Environment"
   }
 }
 
@@ -44,7 +55,11 @@ resource "aws_route_table" "public" {
     cidr_block = "0.0.0.0/0"
     gateway_id = aws_internet_gateway.main.id
   }
-  tags = { Name = "${var.env}-public-rt" }
+  tags = {
+    Name        = "${var.project_name}-vpc"
+      project     = var.project_name
+      Target      = "Test Environment"
+}
 }
 
 resource "aws_route_table_association" "public_assoc" {
@@ -64,15 +79,10 @@ resource "aws_nat_gateway" "main" {
   allocation_id = aws_eip.nat[0].id
   subnet_id     = aws_subnet.public[0].id
   depends_on    = [aws_internet_gateway.main]
-  tags = { Name = "${var.env}-nat" }
+  tags = {
+     Name = "${var.env}-${var.project_name}-nat-gateway"
+     Project = var.project_name
+     Target  = "Test Environment"
+  }
 }
 
-output "vpc_id" {
-  value = aws_vpc.main.id
-}
-output "public_subnets" {
-  value = aws_subnet.public[*].id
-}
-output "private_subnets" {
-  value = aws_subnet.private[*].id
-}
