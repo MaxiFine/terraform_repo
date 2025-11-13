@@ -19,7 +19,10 @@ resource "aws_instance" "web" {
 resource "aws_eip" "web_addr" {
   # We're not doing this directly
   # instance = aws_instance.web.id
-  vpc      = true
+  # vpc      = true
+  # network_interface = 1
+  # address = abs(aws_instance.web.private_ip)
+  # depends_on = [ aws_eip_association.eip_assoc ]
  
   tags = {
     Name        = "server-${var.infra_env}-web-address"
