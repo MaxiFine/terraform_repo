@@ -19,12 +19,24 @@ data "aws_ami" "ubuntu" {
     owners = ["099720109477"] # Canonical official
 }
 
-module "ec2_app" {
-   source = "./modules/ec2"
+# module "ec2_app" {
+#    source = "./modules/ec2"
  
-   infra_env = var.infra_env[terraform.workspace]
-   infra_role = "app"
-   instance_size = var.instance_size
-   instance_ami = data.aws_ami.ubuntu.id
-   # instance_root_device_size = 12 # Optional
+#    infra_env = var.infra_env[terraform.workspace]
+#    infra_role = "app"
+#    instance_size = var.instance_size
+#    instance_ami = data.aws_ami.ubuntu.id
+#    # instance_root_device_size = 12 # Optional
+# }
+
+
+module "vpc" {
+   source = "./modules/vpc"
+    # infra_env = var.infra_env[terraform.workspace]
+    # infra_role = "networking"
+    env = terraform.workspace
+    vpc_cidr = var.vpc_cidr
+    az_count = var.az_count
+    enable_nat = var.enable_nat
+    project_name = var.project_name
 }
