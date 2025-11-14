@@ -7,3 +7,26 @@ output "public_subnets" {
 output "private_subnets" {
   value = aws_subnet.private[*].id
 }
+
+
+output "vpc_cidr" {
+  value = aws_vpc.main.cidr_block
+}
+
+output "internet_gateway_id" {
+  value = aws_internet_gateway.main.id
+}
+
+output "public_route_table_id" {
+  value = aws_route_table.public.id
+}
+
+output "nat_gateway_ids" {
+  value = aws_nat_gateway.this[*].id
+}
+
+
+output "private_route_table_ids" {
+  value = aws_route_table.private[*].id
+}
+
