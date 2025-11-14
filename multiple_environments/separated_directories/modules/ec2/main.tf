@@ -19,7 +19,7 @@ resource "aws_instance" "web" {
 resource "aws_eip" "web_addr" {
   # We're not doing this directly
   # instance = aws_instance.web.id
-  vpc      = true
+  # vpc      = true
  
  
   tags = {
