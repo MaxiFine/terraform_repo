@@ -32,7 +32,8 @@ resource "aws_subnet" "public" {
     # Name = "${var.env}-public-${count.index + 1}"
      Name        = "${var.project_name}-public-${count.index + 1}"
       project     = var.project_name
-      Target      = "Test Environment"
+      # Target      = "Test Environment" # FOR PRODUCTION 
+      Environment      = "Stage Environment" # FOR PRODUCTION 
   }
 }
 
@@ -77,7 +78,7 @@ resource "aws_eip" "nat" {
 resource "aws_nat_gateway" "main" {
   count = var.enable_nat ? 1 : 0
   allocation_id = aws_eip.nat[0].id
-  subnet_id     = aws_subnet.public[0].id
+  subnet_id     = aws_subnet.public[count.index].id
   depends_on    = [aws_internet_gateway.main]
   tags = {
      Name = "${var.env}-${var.project_name}-nat-gateway"
