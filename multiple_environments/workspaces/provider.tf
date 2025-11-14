@@ -14,8 +14,9 @@ terraform {
   #   profile                 = "tf-awesome"
   # }
 }
+
 provider "aws" {
-  profile = "reachapp"
+  # profile = "reachapp"
   region  = var.default_region
 }
 

@@ -25,10 +25,19 @@ variable infra_env {
 
 #############
 ### VPC Variables
-variable "env" {}
+variable "env" {
+    # default = terraform.workspace
+    default = "dev"
+    description = "Environment For this resources"
+}
 variable "vpc_cidr" { default = "10.0.0.0/16" }
 variable "az_count" { default = 2 }
-variable "enable_nat" { default = true }
+variable "enable_nat" { 
+    description = "Enable NAT Gateways"
+    default = true # for prod environment
+    # default = false  # for dev environment
+    }
+
 variable "project_name" {
     description = "Name of Project"
     type = string
