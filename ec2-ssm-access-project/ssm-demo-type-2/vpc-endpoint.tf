@@ -31,12 +31,14 @@ resource "aws_vpc_endpoint" "ssm_endpoint" {
 resource "aws_security_group" "ssm_https" {
   name        = "allow_ssm"
   description = "Allow SSM traffic"
-  vpc_id      = module.vpc.vpc_id
+#   vpc_id      = module.vpc.vpc_id
+  vpc_id      = aws_vpc.main.id
   ingress {
     from_port   = 443
     to_port     = 443
     protocol    = "tcp"
-    cidr_blocks = module.vpc.private_subnets_cidr_blocks
+    # cidr_blocks = module.vpc.private_subnets_cidr_blocks
+    cidr_blocks = [aws_vpc.main.cidr_block]
   }
 
   egress {
