@@ -21,6 +21,7 @@ resource "aws_vpc_endpoint" "ssm_endpoint" {
     subnet_ids = [aws_subnet.private.id]
     security_group_ids = [aws_security_group.ssm_endpoint_sg.id]
     private_dns_enabled = true
+    # enable_dns_support = true
     ip_address_type = "ipv4"
     tags = {
         Name = "MX-SSM-Endpoint"
