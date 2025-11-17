@@ -1,3 +1,21 @@
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 6.0"
+    }
+  }
+ 
+  # backend "s3" {
+  #   bucket                  = "tf-awesome-backend"
+  #   key                     = "terraform.tfstate"
+  #   workspace_key_prefix    = "workspaces"
+  #   region                  = "ap-southeast-1"
+  #   profile                 = "tf-awesome"
+  # }
+}
+
+
 provider "aws" {
     region = "eu-west-1"
 }
