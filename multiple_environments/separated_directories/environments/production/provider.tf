@@ -2,19 +2,20 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 3.0"
+      version = "~> 6.0"
     }
   }
- 
-  backend "s3" {
-    bucket                  = "tf-awesome-backend"
-    key                     = "multi-environments/prod/terraform.tfstate"
-    region                  = "ap-southeast-1"
-    profile                 = "tf-awesome"
-  }
+  # Using local state for simplicity
+  # backend "s3" {
+  #   bucket                  = "tf-awesome-backend"
+  #   key                     = "multi-environments/prod/terraform.tfstate"
+  #   region                  = "ap-southeast-1"
+  #   profile                 = "tf-awesome"
+  #   use_lockfile = true
+  # }
 }
 provider "aws" {
-  profile = "tf-awesome"
+  profile = "reachapp"
   region  = var.default_region
 }
 
