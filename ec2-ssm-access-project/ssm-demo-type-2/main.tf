@@ -80,7 +80,7 @@ resource "aws_route_table_association" "private" {
 
 resource "aws_instance" "private" {
   ami                    = local.selected_ami  
-  instance_type          = "t2.micro"
+  instance_type          = "t3.micro"
   subnet_id              = aws_subnet.private.id
   associate_public_ip_address = false
 
