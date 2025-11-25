@@ -78,15 +78,47 @@ resource "aws_route_table_association" "private" {
   route_table_id = aws_route_table.private.id
 }
 
+# Security group for EC2 instance (allows outbound HTTPS to VPC endpoints)
+resource "aws_security_group" "ssm_instance_sg" {
+  name        = "ssm-instance-sg"
+  description = "Security group for EC2 instance to access SSM endpoints"
+  vpc_id      = aws_vpc.main.id
+
+  egress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = [aws_vpc.main.cidr_block]
+    description = "Allow HTTPS to VPC endpoints"
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+    description = "Allow all outbound for updates and S3 access"
+  }
+
+  tags = {
+    Name = "ssm-instance-sg"
+  }
+}
+
 resource "aws_instance" "private" {
   ami                    = local.selected_ami  
   instance_type          = "t3.micro"
   subnet_id              = aws_subnet.private.id
+  iam_instance_profile   = aws_iam_instance_profile.ssm_instance_profile.name
+  vpc_security_group_ids = [aws_security_group.ssm_instance_sg.id]
   associate_public_ip_address = false
 
-  tags = {
-    Name = "PrivateInstance"
-  }
+  tags = merge(
+    var.tags,
+    {
+      Name = "PrivateInstance-SSM"
+    }
+  )
 }
 
 # create an rds instance in the private subnet
