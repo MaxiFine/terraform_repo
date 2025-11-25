@@ -89,3 +89,6 @@ resource "aws_instance" "private" {
   }
 }
 
+# create an rds instance in the private subnet
+# use a bastian host to access it from that same subnet
+# Add a cloud watch to do a stress testing too.
