@@ -21,6 +21,12 @@ resource "aws_iam_role_policy_attachment" "ssm_role_attachment"{
     policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
 }
 
+# CloudWatch Agent permissions for metrics and logs
+resource "aws_iam_role_policy_attachment" "cloudwatch_agent" {
+    role       = aws_iam_role.ssm_role.name
+    policy_arn = "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy"
+}
+
 
 resource "aws_iam_instance_profile" "ssm_instance_profile" {
     name = "MX-SSM-Demo-Instance-Profile"
