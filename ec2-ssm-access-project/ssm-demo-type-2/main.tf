@@ -112,6 +112,8 @@ resource "aws_instance" "private" {
   iam_instance_profile   = aws_iam_instance_profile.ssm_instance_profile.name
   vpc_security_group_ids = [aws_security_group.ssm_instance_sg.id]
   associate_public_ip_address = false
+  
+  user_data = file("${path.module}/user_data.sh")
 
   tags = merge(
     var.tags,
