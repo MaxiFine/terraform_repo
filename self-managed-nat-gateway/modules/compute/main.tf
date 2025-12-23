@@ -44,7 +44,7 @@ data "aws_ami" "amzn_linux_2023_ami" {
 resource "aws_instance" "aws_nat_gateway_instance" {
     count                           = length(var.public_subnet_ids)
     ami                             = var.nat_instance_ami_id
-    instance_type                   = "t2.micro"
+    instance_type                   = "t3.small"
     subnet_id                       = element(var.public_subnet_ids[*], count.index)
     vpc_security_group_ids          = [aws_security_group.nat_instance_sg.id]
     associate_public_ip_address     = true
