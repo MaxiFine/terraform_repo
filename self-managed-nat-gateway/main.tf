@@ -14,10 +14,10 @@ module "nat_instance_key_pair" {
     tags                                = var.tags
 }
 
-module "ssh_key_secret" {
+module "key_pair" {
     source                              = "./module/secrets"
-    name                                = var.ssh_key_secret_name
-    description                         = var.ssh_key_secret_description
+    name                                = var.key_pair_name
+    description                         = var.key_pair_description
     secret_string                       = module.nat_instance_key_pair.sensitive_output.pem
     tags                                = var.tags
 }

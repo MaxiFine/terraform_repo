@@ -52,12 +52,12 @@ variable "nat_instance_key_name" {
 # SSH Key Secrets
 #####################################################################
 
-variable "ssh_key_secret_name" {
+variable "key_pair_name" {
   description             = "Name of the ssh key secret."
   type                    = string
 }
 
-variable "ssh_key_secret_description" {
+variable "key_pair_description" {
   description             = "Description of the ssh key secret."
   type                    = string
 }
@@ -85,13 +85,17 @@ variable "environment" {
   type              = string
 }
 
-variable "tags" {
-  description       = "Tags to be passed to the resources."
-  type              = map(string)
-}
-
 variable "region" {
     description     = "Region for the resources"
     type            = string
 }
 
+variable "tags" {
+  description = "Common tags to apply to all resources"
+  type        = map(string)
+  default = {
+    Environment = "Development"
+    ManagedBy   = "Terraform"
+    Project     = "ECS-Nginx-Web-App"
+  }
+}
