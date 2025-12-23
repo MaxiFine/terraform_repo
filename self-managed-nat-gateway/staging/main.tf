@@ -38,7 +38,7 @@ module "nat_instances" {
     ec2_key_name                        = module.nat_instance_key_pair.output.key_name
     region                              = local.region
     tags                                = local.tags
-    ami_id                             = local.nat_instance_ami_id
+    ami_id                              = null  # Uses default Ubuntu AMI lookup
 
 }
 

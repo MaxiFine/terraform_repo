@@ -2,8 +2,8 @@
 # Locals like tfvars for staging environment
 
 locals {
-    vpc_name                            = "NAT Instance VPC"
-    key_pair_name                      = "example_ssh_key_pem"
+    vpc_name                            = "NATInstanceVPC"
+    key_pair_name                      = "nat_instance_key_pair"
     key_pair_description               = "pem used for NAT Instance connection"
     nat_instance_key_name               = "nat_instance_key"
     main_cidr_block                     = "10.0.0.0/16"
