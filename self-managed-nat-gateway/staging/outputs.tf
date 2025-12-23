@@ -1,10 +1,10 @@
 output "nat_instances_output" {
     description             = "NAT Instances Output"
-    value                   = module.compute.private_instance_ip_1
+    value                   = module.nat_instances.private_instance_ip_1
 }
 
 output "nat_testing_instances_output" {
     description             = "NAT Testing Instances Output"
-    value                   = module.compute.private_instance_ip_2
+    value                   = module.nat_instances.private_instance_ip_2
 }
 
