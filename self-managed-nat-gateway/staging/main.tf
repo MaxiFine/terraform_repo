@@ -9,21 +9,22 @@ module "vpc" {
 }
 
 module "nat_instance_key_pair" {
-    source                              = "../module/key_pair"
+    source                              = "../modules/key_pair"
     key_name                            = local.nat_instance_key_name
     tags                                = local.tags
 }
 
-module "ssh_key_secret" {
-    source                              = "../module/secrets"
-    name                                = local.ssh_key_secret_name
-    description                         = local.ssh_key_secret_description
+module "key_pair" {
+    source                              = "../modules/secrets"
+    name                                = local.key_pair_name
+    description                         = local.key_pair_description
     secret_string                       = module.nat_instance_key_pair.sensitive_output.pem
     tags                                = local.tags
+    environment                         = "staging"
 }
 
 module "nat_instances" {
-    source                              = "../module/nat_instance"
+    source                              = "../modules/compute"
     nat_instance_ami_id                 = local.nat_instance_ami_id
     main_vpc_id                         = module.vpc.vpc_id
     main_cidr_block                     = local.main_cidr_block
@@ -37,5 +38,7 @@ module "nat_instances" {
     ec2_key_name                        = module.nat_instance_key_pair.output.key_name
     region                              = local.region
     tags                                = local.tags
+    ami_id                             = local.nat_instance_ami_id
+
 }
 

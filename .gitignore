@@ -23,3 +23,12 @@ tera-multi-env/environments/staging/.terraform
 tera-multi-env/environments/prod/.terraform
 tera-multi-env/environments/prod/terraform.tfvars
 
+self-managed-nat-gateway/terraform.tfstate
+self-managed-nat-gateway/terraform.tfstate.backup
+self-managed-nat-gateway/.terraform/*
+self-managed-nat-gateway/staging/terraform.tfstate
+self-managed-nat-gateway/staging/terraform.tfstate.backup
+self-managed-nat-gateway/staging/.terraform/*
+self-managed-nat-gateway/prod/terraform.tfstate
+
+
