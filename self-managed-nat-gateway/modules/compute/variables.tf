@@ -6,12 +6,6 @@ variable "ami_id" {
 variable "tags" {
   description = "Common tags to apply to all resources"
   type        = map(string)
-  default = {
-    Environment = "Development"
-    ManagedBy   = "Terraform"
-    Project     = "AWS Self Managed NAT Gateway"
-    Owner       = "MxnLabs"
-  }
 }
 
 
@@ -76,9 +70,4 @@ variable "ec2_key_name" {
   type                = string
 }
 
-variable "tags" {
-  description         = "Tags to be added to the EC2 Instances."
-  type                = map(string)
-  default             = {}
-}
 

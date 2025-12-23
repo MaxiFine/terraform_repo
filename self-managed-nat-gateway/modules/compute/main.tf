@@ -41,7 +41,7 @@ data "aws_ami" "amzn_linux_2023_ami" {
   }
 }
 
-resource "aws_instance" "nat_aws_instances" {
+resource "aws_instance" "aws_nat_gateway_instance" {
     count                           = length(var.public_subnet_ids)
     ami                             = var.nat_instance_ami_id
     instance_type                   = "t2.micro"
