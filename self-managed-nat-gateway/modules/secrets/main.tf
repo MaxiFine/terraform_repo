@@ -1,6 +1,7 @@
 resource "aws_secretsmanager_secret" "main" {
     name                        = "${var.name}"
     description                 = "${var.description}"
+    recovery_window_in_days = 0
     tags                        = "${merge(var.tags,
                                             tomap({"Name" = "${var.name} Secrets Manager Secret"}))}"
 }

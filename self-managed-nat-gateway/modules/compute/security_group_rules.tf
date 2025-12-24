@@ -8,12 +8,15 @@ resource "aws_security_group_rule" "nat_instance_inbound_sg_rule" {
 }
 
 resource "aws_security_group_rule" "ssh_ingress_from_public_ip" {
+    count               = length(var.private_ips_for_ssh) > 0 ? 1 : 0
     type                = "ingress"
     from_port           = 22
     to_port             = 22
     protocol            = "tcp"
     #this allows private ingress from whatever ip you specify as a variable
-    cidr_blocks         = var.private_ips_for_ssh
+    # cidr_blocks         = var.private_ips_for_ssh
+    # cidr_blocks         = list(aws_instance.aws_nat_gateway_instance[*].private_ip, "/32")
+    cidr_blocks = [for ip in aws_instance.aws_nat_gateway_instance[*].private_ip : "${ip}/32"]
     security_group_id   = aws_security_group.nat_instance_sg.id
 }
 
