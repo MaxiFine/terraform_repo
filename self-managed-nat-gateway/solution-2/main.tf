@@ -1,6 +1,16 @@
 ##############################################
 # Provider Configuration
 ##############################################
+
+data "aws_region" "current" {}
+
+data "aws_availability_zones" "available" {
+  state = "available"
+}
+
+locals {
+  az = data.aws_availability_zones.available.names[*] # Select the first available AZ
+}
 # Configure the AWS provider to use the desired region
 provider "aws" {
     # region = "us-east-2" # US East (Ohio) region
@@ -30,7 +40,7 @@ module "vpc" {
     cidr = "10.11.0.0/16"  # 65,536 IP addresses
 
     # Define AZs and subnet ranges
-    azs             = ["eu-west-1a", "eu-west-1b"] # 2 Availability Zones
+    azs             = [local.az[0], local.az[1]] # 2 Availability Zones
     private_subnets = ["10.11.1.0/26", "10.11.2.0/26"]    # 62 IPs each
     public_subnets  = ["10.11.101.0/24", "10.11.102.0/24"] # 254 IPs each
 
