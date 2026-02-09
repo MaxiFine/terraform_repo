@@ -1,9 +1,10 @@
 ##############################################
 # Provider Configuration
 ##############################################
-
+# Configure the AWS provider to use the desired region
 provider "aws" {
-    region = "us-east-2" # US East (Ohio) region
+    # region = "us-east-2" # US East (Ohio) region
+    region = "eu-west-1" # EU (Ireland) region
 }
 
 # Specify required providers and their versions
@@ -29,7 +30,7 @@ module "vpc" {
     cidr = "10.11.0.0/16"  # 65,536 IP addresses
 
     # Define AZs and subnet ranges
-    azs             = ["us-east-2a", "us-east-2b"] # 2 Availability Zones
+    azs             = ["eu-west-1a", "eu-west-1b"] # 2 Availability Zones
     private_subnets = ["10.11.1.0/26", "10.11.2.0/26"]    # 62 IPs each
     public_subnets  = ["10.11.101.0/24", "10.11.102.0/24"] # 254 IPs each
 
@@ -37,7 +38,9 @@ module "vpc" {
 
     tags = {
         Terraform   = "true"
-        Environment = "dev"
+        Environment = "Development"
+        Purpose     = "learn-self-managed-nat-gateway-instance"
+
     }
 }
 
@@ -91,7 +94,7 @@ EOF
     tags = {
         Name        = "self-managed-nat-ec2-instance"
         Terraform   = "true"
-        Environment = "dev"
+        Environment = "Development"
     }
 }
 
