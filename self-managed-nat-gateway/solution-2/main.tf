@@ -125,7 +125,8 @@ resource "aws_security_group" "nat_ec2_sg" {
     tags = {
         Name        = "self-managed-nat-ec2-instance-sg"
         Terraform   = "true"
-        Environment = "dev"
+        Environment = "Development"
+        Purpose     = "learn-self-managed-nat-gateway-instance"
     }
 }
 
@@ -134,7 +135,8 @@ resource "aws_eip" "nat_ec2_eip" {
     tags = {
         Name        = "self-managed-nat-ec2-instance-eip"
         Terraform   = "true"
-        Environment = "dev"
+        Environment = "Development"
+        Purpose     = "learn-self-managed-nat-gateway-instance"
     }
 }
 
@@ -142,6 +144,13 @@ resource "aws_eip" "nat_ec2_eip" {
 resource "aws_eip_association" "nat_ec2_eip_assoc" {
     instance_id   = aws_instance.nat_ec2_instance.id
     allocation_id = aws_eip.nat_ec2_eip.id
+
+    # tags = {
+    #     Name        = "self-managed-nat-ec2-instance-eip-association"
+    #     Terraform   = "true"
+    #     Environment = "Development"
+    #     Purpose     = "learn-self-managed-nat-gateway-instance"
+    # }
 }
 
 ##########################################
@@ -153,4 +162,11 @@ resource "aws_route" "nat_ec2_route" {
     route_table_id         = module.vpc.private_route_table_ids[0]
     destination_cidr_block = "0.0.0.0/0"
     network_interface_id   = aws_instance.nat_ec2_instance.primary_network_interface_id
+
+    # tags = {
+    #     Name        = "nat-ec2-instance-route"
+    #     Terraform   = "true"
+    #     Environment = "Development"
+    #     Purpose     = "learn-self-managed-nat-gateway-instance"
+    # }
 }
