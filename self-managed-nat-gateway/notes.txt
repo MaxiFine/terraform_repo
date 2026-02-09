@@ -1,0 +1,10 @@
+# Listing the keypem
+aws secretsmanager list-secrets
+aws secretsmanager get-secret-value --secret-id <SECRET_ARN> --query SecretString --output text | base64 --decode
+
+# Follow Actions
+Follow Up Actions:
+Make creating VPC optional.
+Add Cloudwatch monitoring for NAT Instance Connectivity failures.
+Add Cloudwatch monitoring for Data Transfer.
+Investigate options for Load Balancing NAT Instances.
