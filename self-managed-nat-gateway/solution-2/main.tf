@@ -82,7 +82,8 @@ data "aws_ami" "latest_amazon_linux" {
 
 # Create the NAT instance in the public subnet
 resource "aws_instance" "nat_ec2_instance" {
-    instance_type = "t4g.nano"  # ARM-based instance for cost optimization
+    # instance_type = "t4g.nano"  # ARM-based instance for cost optimization
+    instance_type = "t3.small"  # ARM-based instance for cost optimization
     ami           = data.aws_ami.latest_amazon_linux.id
     subnet_id     = module.vpc.public_subnets[0]
     
