@@ -181,3 +181,5 @@ resource "aws_route" "nat_ec2_route" {
     #     Purpose     = "learn-self-managed-nat-gateway-instance"
     # }
 }
+
+# SPIN THE PROJECT UP
