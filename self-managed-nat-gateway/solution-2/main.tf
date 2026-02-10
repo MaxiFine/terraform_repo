@@ -272,7 +272,7 @@ resource "aws_security_group" "private_test_ec2_sg" {
 # Private test EC2 instance (no public IP)
 resource "aws_instance" "private_test_ec2" {
     ami                         = data.aws_ami.latest_amazon_linux.id
-    instance_type               = "t4g.nano"
+    instance_type               = "t3.micro"
     subnet_id                   = module.vpc.private_subnets[0]
     associate_public_ip_address = false
     vpc_security_group_ids      = [aws_security_group.private_test_ec2_sg.id]
