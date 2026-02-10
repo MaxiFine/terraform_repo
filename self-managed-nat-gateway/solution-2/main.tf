@@ -22,7 +22,7 @@ terraform {
     required_providers {
         aws = {
             source  = "hashicorp/aws"
-            version = "6.0.0-beta1"
+            version = "~> 6.0"
         }
     }
 }
@@ -34,7 +34,7 @@ terraform {
 # Create VPC using the official AWS VPC module
 module "vpc" {
     source  = "terraform-aws-modules/vpc/aws"
-    version = "5.21.0"
+    version = "~> 6.0"
 
     name = "self-managed-nat-gateway-vpc"
     cidr = "10.11.0.0/16"  # 65,536 IP addresses
