@@ -98,12 +98,43 @@ data "aws_ami" "latest_amazon_linux" {
 # NAT Instance Configuration
 ##########################################
 
+# IAM role for NAT instance (for SSM access)
+resource "aws_iam_role" "nat_ssm_role" {
+  name = "self-managed-nat-ssm-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [{
+      Action    = "sts:AssumeRole",
+      Effect    = "Allow",
+      Principal = { Service = "ec2.amazonaws.com" }
+    }]
+  })
+
+  tags = {
+    Terraform   = "true"
+    Environment = "Development"
+    Purpose     = "nat-ssm-role"
+  }
+}
+
+resource "aws_iam_role_policy_attachment" "nat_ssm_core" {
+  role       = aws_iam_role.nat_ssm_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+}
+
+resource "aws_iam_instance_profile" "nat_ssm_profile" {
+  name = "self-managed-nat-ssm-profile"
+  role = aws_iam_role.nat_ssm_role.name
+}
+
 # Create the NAT instance in the public subnet
 resource "aws_instance" "nat_ec2_instance" {
     # instance_type = "t4g.nano"  # ARM-based instance for cost optimization
     instance_type = "t3.small"  # ARM-based instance for cost optimization
     ami           = data.aws_ami.latest_amazon_linux.id
     subnet_id     = module.vpc.public_subnets[0]
+    iam_instance_profile = aws_iam_instance_profile.nat_ssm_profile.name
     
     # Bootstrap script to configure NAT functionality
     user_data = <<-EOF
