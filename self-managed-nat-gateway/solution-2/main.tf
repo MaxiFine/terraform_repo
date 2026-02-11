@@ -232,6 +232,95 @@ resource "aws_route" "nat_ec2_route" {
     # }
 }
 
+# Also add route for second private subnet if it exists
+resource "aws_route" "nat_ec2_route_2" {
+    count                  = length(module.vpc.private_route_table_ids) > 1 ? 1 : 0
+    route_table_id         = module.vpc.private_route_table_ids[1]
+    destination_cidr_block = "0.0.0.0/0"
+    network_interface_id   = aws_instance.nat_ec2_instance.primary_network_interface_id
+}
+
+##########################################
+# VPC Endpoints (for SSM access from private subnets)
+##########################################
+
+# Security group for VPC endpoints
+resource "aws_security_group" "vpc_endpoints_sg" {
+  name        = "self-managed-nat-vpc-endpoints-sg"
+  description = "Security group for VPC endpoints"
+  vpc_id      = module.vpc.vpc_id
+
+  ingress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = [module.vpc.vpc_cidr_block]
+    description = "Allow HTTPS from VPC"
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+    description = "Allow all outbound"
+  }
+
+  tags = {
+    Name        = "self-managed-nat-vpc-endpoints-sg"
+    Terraform   = "true"
+    Environment = "Development"
+  }
+}
+
+# SSM VPC Endpoint
+resource "aws_vpc_endpoint" "ssm" {
+  vpc_id              = module.vpc.vpc_id
+  service_name        = "com.amazonaws.${data.aws_region.current.name}.ssm"
+  vpc_endpoint_type   = "Interface"
+  subnet_ids          = module.vpc.private_subnets
+  security_group_ids  = [aws_security_group.vpc_endpoints_sg.id]
+  private_dns_enabled = true
+
+  tags = {
+    Name        = "self-managed-nat-ssm-endpoint"
+    Terraform   = "true"
+    Environment = "Development"
+  }
+}
+
+# SSM Messages VPC Endpoint
+resource "aws_vpc_endpoint" "ssmmessages" {
+  vpc_id              = module.vpc.vpc_id
+  service_name        = "com.amazonaws.${data.aws_region.current.name}.ssmmessages"
+  vpc_endpoint_type   = "Interface"
+  subnet_ids          = module.vpc.private_subnets
+  security_group_ids  = [aws_security_group.vpc_endpoints_sg.id]
+  private_dns_enabled = true
+
+  tags = {
+    Name        = "self-managed-nat-ssmmessages-endpoint"
+    Terraform   = "true"
+    Environment = "Development"
+  }
+}
+
+# EC2 Messages VPC Endpoint
+resource "aws_vpc_endpoint" "ec2messages" {
+  vpc_id              = module.vpc.vpc_id
+  service_name        = "com.amazonaws.${data.aws_region.current.name}.ec2messages"
+  vpc_endpoint_type   = "Interface"
+  subnet_ids          = module.vpc.private_subnets
+  security_group_ids  = [aws_security_group.vpc_endpoints_sg.id]
+  private_dns_enabled = true
+
+  tags = {
+    Name        = "self-managed-nat-ec2messages-endpoint"
+    Terraform   = "true"
+    Environment = "Development"
+  }
+}
+
 # SPIN THE PROJECT UP
 
 ##########################################
