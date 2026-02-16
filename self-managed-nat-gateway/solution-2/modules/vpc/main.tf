@@ -2,8 +2,8 @@ module "vpc" {
     source  = "terraform-aws-modules/vpc/aws"
     version = "~> 6.0"
 
-    name = "self-managed-nat-gateway-vpc"
-    cidr = "10.11.0.0/16"  # 65,536 IP addresses
+    name = var.vpc_name
+    cidr = var.vpc_cidr  # 65,536 IP addresses
 
     # Define AZs and subnet ranges
     azs             = [local.az[0], local.az[1]] # 2 Availability Zones
