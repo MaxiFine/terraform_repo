@@ -1,3 +1,13 @@
+data "aws_region" "current" {}
+
+data "aws_availability_zones" "available" {
+  state = "available"
+}
+
+locals {
+  az = data.aws_availability_zones.available.names[*] # Select the first available AZ
+}
+
 module "vpc" {
     source  = "terraform-aws-modules/vpc/aws"
     version = "~> 6.0"
