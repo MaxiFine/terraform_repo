@@ -9,3 +9,26 @@ variable "vpc_name" {
   type = string
   default = "self-managed-nat-gateway-vpc"
 }
+
+
+
+variable "private_subnet_count" {
+  default = 2
+}
+
+variable "public_subnet_count" {
+  default = 2
+}
+
+
+locals {
+  private_subnets = [
+    for i in range(var.private_subnet_count) :
+    cidrsubnet(var.vpc_cidr, 8, i)    # /24 = 16 + 8
+  ]
+
+  public_subnets = [
+    for i in range(var.public_subnet_count) :
+    cidrsubnet(var.vpc_cidr, 8, i + 100)  # offset to avoid overlap
+  ]
+}
