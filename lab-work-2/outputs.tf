@@ -1,8 +1,8 @@
 output "s3_bucket_endpoint" {
-    description = "Name of the S3 bucket"
-    # value       = aws_s3_bucket.modules.s3.website_endpoint
-    value = module.s3.website_endpoint
-  
+  description = "Name of the S3 bucket"
+  # value       = aws_s3_bucket.modules.s3.website_endpoint
+  value = module.s3.website_endpoint
+
 }
 
 # output "s3_bucket_name" {
@@ -11,8 +11,8 @@ output "s3_bucket_endpoint" {
 # }
 
 output "s3_bucket_id" {
-    description = "ARN of the S3 bucket"
-    value       = module.s3.s3_bucket_id
+  description = "ARN of the S3 bucket"
+  value       = module.s3.s3_bucket_id
 }
 
 # output "s3_bucket_id" {

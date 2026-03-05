@@ -38,6 +38,6 @@
 ######################################
 ## VARS FOR 
 variable "external_alb_dns" {
-  type = string
+  type        = string
   description = "External ALB as entry  point"
 }
