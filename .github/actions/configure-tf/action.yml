@@ -10,14 +10,9 @@ inputs:
     description: "AWS region for deployment"
     required: true
     default: "us-east-1"
-  aws-access-key-id:
-    description: "AWS Access Key ID"
+  aws-role-arn:
+    description: "IAM Role ARN to assume via GitHub OIDC"
     required: true
-    # default: ${{ secrets.AWS_ACCESS_KEY_ID }}
-  aws-secret-access-key:
-    description: "AWS Secret Access Key"
-    required: true
-    # default: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
   tf-bucket-name:
     description: "S3 bucket name for Terraform state"
     required: true
@@ -37,8 +32,7 @@ runs:
     - name: Configure AWS Credentials
       uses: aws-actions/configure-aws-credentials@v4
       with:
-        aws-access-key-id: ${{ inputs.aws-access-key-id }}
-        aws-secret-access-key: ${{ inputs.aws-secret-access-key }}
+        role-to-assume: ${{ inputs.aws-role-arn }}
         aws-region: ${{ inputs.aws-region }}
 
     - name: Setup Terraform
