@@ -10,8 +10,8 @@ terraform {
 
 # Configure the AWS Provider
 provider "aws" {
-  region = var.aws_region
-
+  region  = var.aws_region
+  profile = var.aws_account_profile
   default_tags {
     tags = {
       Project     = var.project_name

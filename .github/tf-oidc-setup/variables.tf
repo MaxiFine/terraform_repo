@@ -24,8 +24,7 @@ variable "github_repo" {
 
 variable "branch" {
   description = "Main branch name that can deploy to production"
-  type        = list(string)
-  default     = ["main", "dev", "test"]
+  type        = string
 }
 
 variable "aws_region" {
@@ -39,3 +38,15 @@ variable "use_admin_policy" {
   type        = bool
   default     = true
 }
+
+variable "aws_account_profile" {
+  description = "AWS CLI profile name to use for authentication"
+  type        = string
+
+}
+
+# variable "branch" {
+#   description = "Github branch default branch name"
+#   type = string
+
+# }
