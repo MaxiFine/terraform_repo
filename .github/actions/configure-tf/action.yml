@@ -29,6 +29,27 @@ inputs:
 runs:
   using: "composite"
   steps:
+    - name: Validate Required Inputs
+      shell: bash
+      run: |
+        if [ -z "${{ inputs.aws-role-arn }}" ]; then
+          echo "❌ Missing required input: aws-role-arn"
+          echo "💡 Set repository secret AWS_DEPLOY_ROLE_ARN (or AWS_DESTROY_ROLE_ARN for destroy workflow)."
+          exit 1
+        fi
+
+        if [ -z "${{ inputs.tf-bucket-name }}" ]; then
+          echo "❌ Missing required input: tf-bucket-name"
+          echo "💡 Set repository secret TF_S3_BUCKET and ensure workflow passes it."
+          exit 1
+        fi
+
+        if [ -z "${{ inputs.tf-dynamodb-table }}" ]; then
+          echo "❌ Missing required input: tf-dynamodb-table"
+          echo "💡 Set repository secret TF_DYNAMO_DB_TABLE and ensure workflow passes it."
+          exit 1
+        fi
+
     - name: Configure AWS Credentials
       uses: aws-actions/configure-aws-credentials@v4
       with:
