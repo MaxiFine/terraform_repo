@@ -30,5 +30,7 @@ self-managed-nat-gateway/staging/terraform.tfstate
 self-managed-nat-gateway/staging/terraform.tfstate.backup
 self-managed-nat-gateway/staging/.terraform/*
 self-managed-nat-gateway/prod/terraform.tfstate
-
+.github/tf-oidc-setup/terraform.tfvars
+.github/tf-oidc-setup/terraform.tfstate
+.github/tf-oidc-setup/terraform.tfstate.backup
 

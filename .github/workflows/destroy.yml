@@ -1,0 +1,37 @@
+name: Destroy CloudFormation Stack
+
+on:
+  workflow_dispatch:
+
+jobs:
+  destroy:
+    name: Destroy CloudFormation Stack
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    env:
+      STACK_NAME: 'aws-365-template'
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+      AWS_ROLE_TO_ASSUME: ${{ secrets.AWS_DESTROY_ROLE_ARN }}
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_TO_ASSUME }}
+          role-session-name: github-actions-cf-destroy
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Delete CloudFormation Stack
+        run: |
+          aws cloudformation delete-stack \
+            --stack-name ${{ env.STACK_NAME }}
+
+      - name: Wait for Stack Deletion
+        run: |
+          aws cloudformation wait stack-delete-complete \
+            --stack-name ${{ env.STACK_NAME }}

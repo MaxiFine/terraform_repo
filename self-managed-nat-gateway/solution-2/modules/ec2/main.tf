@@ -82,3 +82,4 @@ resource "aws_instance" "private_test_ec2" {
         Purpose     = "nat-validation"
     }
 }
+# implement OIDC for github actions and remove the access keys. and delete those items from the state file or resources for the remote backend

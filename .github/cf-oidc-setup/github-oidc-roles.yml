@@ -1,0 +1,276 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >-
+  GitHub Actions OIDC setup for AWS-365 deploy and destroy workflows.
+  Creates optional OIDC provider, IAM roles, and policies.
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: aws-365
+    Description: Project name used for role and policy names
+  Environment:
+    Type: String
+    Default: prod
+    Description: Environment tag value
+  GitHubOrg:
+    Type: String
+    Description: GitHub organization or user name
+  GitHubRepo:
+    Type: String
+    Description: GitHub repository name
+  DeployBranch1:
+    Type: String
+    Default: main
+    Description: First allowed branch for deploy role
+  DeployBranch2:
+    Type: String
+    Default: dev
+    Description: Second allowed branch for deploy role
+  DeployBranch3:
+    Type: String
+    Default: test
+    Description: Third allowed branch for deploy role
+  DeployBranch4:
+    Type: String
+    Default: auto
+    Description: Fourth allowed branch for deploy role
+  DestroyBranch:
+    Type: String
+    Default: main
+    Description: Allowed branch for destroy role
+  CreateOIDCProvider:
+    Type: String
+    Default: 'false'
+    AllowedValues:
+      - 'true'
+      - 'false'
+    Description: Set true only if OIDC provider does not exist in this AWS account
+  UseAdminPolicy:
+    Type: String
+    Default: 'true'
+    AllowedValues:
+      - 'true'
+      - 'false'
+    Description: Attach AdministratorAccess (easy testing, not least privilege)
+
+Conditions:
+  ShouldCreateOIDCProvider:
+    Fn::Equals:
+      - Ref: CreateOIDCProvider
+      - 'true'
+  ShouldUseAdminPolicy:
+    Fn::Equals:
+      - Ref: UseAdminPolicy
+      - 'true'
+
+Resources:
+  GitHubOIDCProvider:
+    Type: AWS::IAM::OIDCProvider
+    Condition: ShouldCreateOIDCProvider
+    Properties:
+      Url: https://token.actions.githubusercontent.com
+      ClientIdList:
+        - sts.amazonaws.com
+      ThumbprintList:
+        - '6938fd4d98bab03faadb97b34396831e3780aea1'
+
+  GitHubActionsOperationsPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      ManagedPolicyName:
+        Fn::Sub: '${ProjectName}-GitHubActionsOperationsPolicy'
+      Description: Custom policy for GitHub Actions deploy and destroy operations
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: TerraformStateAndArtifacts
+            Effect: Allow
+            Action:
+              - s3:GetObject
+              - s3:PutObject
+              - s3:DeleteObject
+              - s3:ListBucket
+              - s3:GetBucketVersioning
+              - s3:GetBucketLocation
+              - s3:CreateBucket
+              - s3:PutBucketVersioning
+              - s3:PutEncryptionConfiguration
+              - s3:PutBucketPublicAccessBlock
+            Resource: '*'
+          - Sid: CloudFormationOperations
+            Effect: Allow
+            Action:
+              - cloudformation:*
+            Resource: '*'
+          - Sid: EC2AndNetworking
+            Effect: Allow
+            Action:
+              - ec2:*
+            Resource: '*'
+          - Sid: DataAndComputeServices
+            Effect: Allow
+            Action:
+              - rds:*
+              - lambda:*
+              - events:*
+            Resource: '*'
+          - Sid: IAMForProvisioning
+            Effect: Allow
+            Action:
+              - iam:CreateRole
+              - iam:DeleteRole
+              - iam:AttachRolePolicy
+              - iam:DetachRolePolicy
+              - iam:PutRolePolicy
+              - iam:DeleteRolePolicy
+              - iam:GetRole
+              - iam:GetRolePolicy
+              - iam:ListRolePolicies
+              - iam:ListAttachedRolePolicies
+              - iam:CreateInstanceProfile
+              - iam:DeleteInstanceProfile
+              - iam:AddRoleToInstanceProfile
+              - iam:RemoveRoleFromInstanceProfile
+              - iam:ListInstanceProfiles
+              - iam:PassRole
+            Resource: '*'
+          - Sid: SecurityAndMonitoring
+            Effect: Allow
+            Action:
+              - kms:*
+              - sns:*
+              - cloudtrail:*
+              - config:*
+              - guardduty:*
+            Resource: '*'
+          - Sid: OrganizationsAndBudgets
+            Effect: Allow
+            Action:
+              - organizations:*
+              - budgets:*
+            Resource: '*'
+          - Sid: GeneralReadPermissions
+            Effect: Allow
+            Action:
+              - sts:GetCallerIdentity
+              - account:ListRegions
+            Resource: '*'
+
+  GitHubActionsDeployRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName:
+        Fn::Sub: '${ProjectName}-GitHubActionsDeployRole'
+      Description: Role assumed by GitHub Actions via OIDC for deploy workflow
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Federated:
+                Fn::If:
+                  - ShouldCreateOIDCProvider
+                  - Ref: GitHubOIDCProvider
+                  - Fn::Sub: 'arn:aws:iam::${AWS::AccountId}:oidc-provider/token.actions.githubusercontent.com'
+            Action: sts:AssumeRoleWithWebIdentity
+            Condition:
+              StringEquals:
+                token.actions.githubusercontent.com:aud: sts.amazonaws.com
+              StringLike:
+                token.actions.githubusercontent.com:sub:
+                  - Fn::Sub: 'repo:${GitHubOrg}/${GitHubRepo}:ref:refs/heads/${DeployBranch1}'
+                  - Fn::Sub: 'repo:${GitHubOrg}/${GitHubRepo}:ref:refs/heads/${DeployBranch2}'
+                  - Fn::Sub: 'repo:${GitHubOrg}/${GitHubRepo}:ref:refs/heads/${DeployBranch3}'
+                  - Fn::Sub: 'repo:${GitHubOrg}/${GitHubRepo}:ref:refs/heads/${DeployBranch4}'
+                  - Fn::Sub: 'repo:${GitHubOrg}/${GitHubRepo}:pull_request'
+      ManagedPolicyArns:
+        - Ref: GitHubActionsOperationsPolicy
+        - Fn::If:
+            - ShouldUseAdminPolicy
+            - arn:aws:iam::aws:policy/AdministratorAccess
+            - Ref: AWS::NoValue
+      Tags:
+        - Key: Name
+          Value:
+            Fn::Sub: '${ProjectName}-GitHubActionsDeployRole'
+        - Key: Project
+          Value:
+            Ref: ProjectName
+        - Key: Environment
+          Value:
+            Ref: Environment
+        - Key: GitHubOrg
+          Value:
+            Ref: GitHubOrg
+        - Key: GitHubRepo
+          Value:
+            Ref: GitHubRepo
+
+  GitHubActionsDestroyRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName:
+        Fn::Sub: '${ProjectName}-GitHubActionsDestroyRole'
+      Description: Role assumed by GitHub Actions via OIDC for destroy workflow
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Federated:
+                Fn::If:
+                  - ShouldCreateOIDCProvider
+                  - Ref: GitHubOIDCProvider
+                  - Fn::Sub: 'arn:aws:iam::${AWS::AccountId}:oidc-provider/token.actions.githubusercontent.com'
+            Action: sts:AssumeRoleWithWebIdentity
+            Condition:
+              StringEquals:
+                token.actions.githubusercontent.com:aud: sts.amazonaws.com
+              StringLike:
+                token.actions.githubusercontent.com:sub:
+                  - Fn::Sub: 'repo:${GitHubOrg}/${GitHubRepo}:ref:refs/heads/${DestroyBranch}'
+      ManagedPolicyArns:
+        - Ref: GitHubActionsOperationsPolicy
+        - Fn::If:
+            - ShouldUseAdminPolicy
+            - arn:aws:iam::aws:policy/AdministratorAccess
+            - Ref: AWS::NoValue
+      Tags:
+        - Key: Name
+          Value:
+            Fn::Sub: '${ProjectName}-GitHubActionsDestroyRole'
+        - Key: Project
+          Value:
+            Ref: ProjectName
+        - Key: Environment
+          Value:
+            Ref: Environment
+        - Key: GitHubOrg
+          Value:
+            Ref: GitHubOrg
+        - Key: GitHubRepo
+          Value:
+            Ref: GitHubRepo
+
+Outputs:
+  AWSDeployRoleArn:
+    Description: Set this value as GitHub secret AWS_DEPLOY_ROLE_ARN
+    Value:
+      Fn::GetAtt:
+        - GitHubActionsDeployRole
+        - Arn
+
+  AWSDestroyRoleArn:
+    Description: Set this value as GitHub secret AWS_DESTROY_ROLE_ARN
+    Value:
+      Fn::GetAtt:
+        - GitHubActionsDestroyRole
+        - Arn
+
+  GitHubOIDCProviderArn:
+    Description: ARN of GitHub OIDC provider (if created in this stack)
+    Value:
+      Fn::If:
+        - ShouldCreateOIDCProvider
+        - Ref: GitHubOIDCProvider
+        - Fn::Sub: 'arn:aws:iam::${AWS::AccountId}:oidc-provider/token.actions.githubusercontent.com'

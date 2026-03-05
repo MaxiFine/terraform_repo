@@ -1,0 +1,424 @@
+name: Deploy CloudFormation
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+      - test
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy CloudFormation Stack
+    runs-on: ubuntu-latest
+    env:
+      STACK_NAME: 'aws-365-template'
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_BUCKET_NAME: 'aws-365'
+      AWS_BUCKET_PATH: 'cf-templates'
+      AWS_BUCKET_URL: 'https://s3.amazonaws.com/aws-365/cf-templates'
+      AWS_BUDGET_REGION: ${{ secrets.AWS_BUDGET_REGION }}
+      AWS_BUDGET_LIMIT: ${{ secrets.AWS_BUDGET_LIMIT }}
+      AWS_BUDGET_EMAIL: ${{ secrets.AWS_BUDGET_EMAIL }}
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ env.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ env.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+    
+      - name: Create S3 Bucket if not exists
+        run: |
+          if ! aws s3api head-bucket --bucket ${AWS_BUCKET_NAME} 2>/dev/null; then
+            aws s3api create-bucket --bucket ${AWS_BUCKET_NAME}
+          fi
+
+      - name: Upload CloudFormation Template to S3
+        run: |
+          for file in $(find ./infrastructure/cf-templates -type f -name '*.yml'); do
+              aws s3 cp $file s3://${AWS_BUCKET_NAME}/${AWS_BUCKET_PATH}/$(basename $file)
+          done
+    
+      - name: Check for Failed Stack and Handle Appropriately
+        id: stack_check
+        run: |
+          if aws cloudformation describe-stacks --stack-name ${{ env.STACK_NAME }} 2>/dev/null; then
+            STACK_STATUS=$(aws cloudformation describe-stacks --stack-name ${{ env.STACK_NAME }} --query "Stacks[0].StackStatus" --output text)
+            echo "Current stack status: $STACK_STATUS"
+            
+            if [[ "$STACK_STATUS" == "ROLLBACK_COMPLETE" ]]; then
+              echo "Stack is in ROLLBACK_COMPLETE state. Deleting stack before recreating..."
+              aws cloudformation delete-stack --stack-name ${{ env.STACK_NAME }}
+              echo "Waiting for stack deletion to complete..."
+              aws cloudformation wait stack-delete-complete --stack-name ${{ env.STACK_NAME }}
+              echo "Stack deletion completed successfully"
+              echo "stack_updated=false" >> $GITHUB_OUTPUT
+              exit 0
+            elif [[ "$STACK_STATUS" == "UPDATE_ROLLBACK_FAILED" ]]; then
+              # Handle the UPDATE_ROLLBACK_FAILED state
+              echo "Stack is in UPDATE_ROLLBACK_FAILED state. Attempting to continue rollback..."
+              
+              # Try to continue the rollback
+              aws cloudformation continue-update-rollback --stack-name ${{ env.STACK_NAME }}
+              
+              # Wait for rollback to complete
+              echo "Waiting for rollback to complete..."
+              aws cloudformation wait stack-rollback-complete --stack-name ${{ env.STACK_NAME }} || {
+                echo "Rollback could not be continued. Deleting stack to recover..."
+                aws cloudformation delete-stack --stack-name ${{ env.STACK_NAME }}
+                echo "Waiting for stack deletion to complete..."
+                aws cloudformation wait stack-delete-complete --stack-name ${{ env.STACK_NAME }}
+                echo "Stack deletion completed successfully"
+                echo "stack_updated=false" >> $GITHUB_OUTPUT
+                exit 0
+              }
+              
+              echo "Rollback completed successfully. Stack is now ready for updates."
+              echo "stack_updated=false" >> $GITHUB_OUTPUT
+              exit 0
+            elif [[ "$STACK_STATUS" == "CREATE_FAILED" || "$STACK_STATUS" == "UPDATE_ROLLBACK_COMPLETE" || "$STACK_STATUS" == "UPDATE_ROLLBACK_FAILED" ]]; then
+              echo "Stack is in failed state ($STACK_STATUS). Creating change set for update..."
+              
+              # Create change set
+              aws cloudformation create-change-set \
+                --stack-name ${{ env.STACK_NAME }} \
+                --change-set-name UpdateStack \
+                --template-body file://./infrastructure/cf-templates/main.yml \
+                --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM \
+                --parameters ParameterKey=BucketPath,ParameterValue=${{ env.AWS_BUCKET_URL }} \
+                --change-set-type UPDATE
+                
+              # Wait for change set creation
+              aws cloudformation wait change-set-create-complete \
+                --stack-name ${{ env.STACK_NAME }} \
+                --change-set-name UpdateStack || {
+                # When change set creation fails, it could be due to no changes detected
+                # (which is normal and should not be treated as an error).
+                # This check differentiates between a "no changes" scenario (treated as success)
+                # versus an actual error in the change set creation process.
+                # For "no changes" cases, we mark the stack as already updated to skip deployment.
+                if aws cloudformation describe-change-set --stack-name ${{ env.STACK_NAME }} --change-set-name UpdateStack | grep -q "The submitted information didn't contain changes"; then
+                  echo "No changes to deploy"
+                  echo "stack_updated=true" >> $GITHUB_OUTPUT
+                  exit 0
+                else
+                  echo "Change set creation failed"
+                  echo "stack_updated=false" >> $GITHUB_OUTPUT
+                  exit 1
+                fi
+              }
+              
+              # Execute change set
+              aws cloudformation execute-change-set \
+                --stack-name ${{ env.STACK_NAME }} \
+                --change-set-name UpdateStack
+              
+              # Wait for stack update
+              aws cloudformation wait stack-update-complete \
+                --stack-name ${{ env.STACK_NAME }}
+              
+              echo "Stack update initiated"
+              echo "stack_updated=true" >> $GITHUB_OUTPUT
+              exit 0
+            fi
+          else
+            echo "Stack does not exist yet or could not be described."
+            echo "stack_updated=false" >> $GITHUB_OUTPUT
+          fi
+          
+
+      - name: Deploy CloudFormation Stack
+        # Only deploy if previous steps succeeded AND the stack wasn't already updated by change sets.
+        # This prevents duplicate deployments when the stack was successfully recovered from a failed state.
+        if: success() && steps.stack_check.outputs.stack_updated != 'true' 
+        run: |
+          aws cloudformation deploy \
+            --template-file ./infrastructure/cf-templates/main.yml \
+            --stack-name ${{ env.STACK_NAME }} \
+            --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM \
+            --parameter-overrides \
+                BucketPath=${{ env.AWS_BUCKET_URL }}
+
+      - name: Deploy Budget Stack in us-east-1
+        run: |
+          aws cloudformation deploy \
+            --template-file ./infrastructure/cf-templates/budget.yml \
+            --stack-name aws365-budget-stack \
+            --capabilities CAPABILITY_NAMED_IAM \
+            --region ${{ env.AWS_BUDGET_REGION }} \
+            --parameter-overrides \
+              BudgetLimit=${{ env.AWS_BUDGET_LIMIT }} \
+              NotificationEmail=${{ env.AWS_BUDGET_EMAIL }}
+
+
+####################################
+## NOW fails
+####################################
+
+      # - name: Check CloudFormation Stack and Recover on Failed Updates
+      #   id: stack_recovery
+      #   run: |
+      #       set -e
+
+      #       # 1. Does the stack exist? If not, proceed to initial create.
+      #       if ! aws cloudformation describe-stacks --stack-name ${{ env.STACK_NAME }} 2>/dev/null; then
+      #       echo "STACK_STATUS=NOT_EXIST" >> $GITHUB_OUTPUT
+      #       exit 0
+      #       fi
+
+      #       # 2. Retrieve current stack status
+      #       STACK_STATUS=$(aws cloudformation describe-stacks \
+      #       --stack-name ${{ env.STACK_NAME }} \
+      #       --query "Stacks[0].StackStatus" \
+      #       --output text)
+      #       echo "Current stack status: $STACK_STATUS"
+
+      #       case "$STACK_STATUS" in
+      #       # 3a. In UPDATE_ROLLBACK_FAILED → continue the rollback
+      #       UPDATE_ROLLBACK_FAILED)
+      #           echo "State is UPDATE_ROLLBACK_FAILED. Continuing rollback..."
+      #           aws cloudformation continue-update-rollback --stack-name ${{ env.STACK_NAME }}
+
+      #           echo "Waiting for rollback to complete..."
+      #           aws cloudformation wait stack-rollback-complete --stack-name ${{ env.STACK_NAME }}
+      #           echo "Rollback complete; stack is now in UPDATE_ROLLBACK_COMPLETE."
+      #           echo "STACK_STATUS=ROLLED_BACK" >> $GITHUB_OUTPUT
+      #           ;;
+
+      #       # 3b. In UPDATE_ROLLBACK_COMPLETE → stack is healthy; proceed to update
+      #       UPDATE_ROLLBACK_COMPLETE|UPDATE_COMPLETE|UPDATE_COMPLETE_CLEANUP_IN_PROGRESS)
+      #           echo "Stack is in a stable state ($STACK_STATUS). Ready for update."
+      #           echo "STACK_STATUS=READY_FOR_UPDATE" >> $GITHUB_OUTPUT
+      #           ;;
+
+      #       # 3c. In ROLLBACK_COMPLETE or CREATE_FAILED → unrecoverable without deletion
+      #       ROLLBACK_COMPLETE|CREATE_FAILED)
+      #           echo "Stack is in $STACK_STATUS; cannot update. Manual intervention required."
+      #           echo "STACK_STATUS=UNRECOVERABLE" >> $GITHUB_OUTPUT
+      #           ;;
+
+      #       # 3d. In CREATE_IN_PROGRESS, UPDATE_IN_PROGRESS, ROLLBACK_IN_PROGRESS etc. → wait or abort
+      #       CREATE_IN_PROGRESS|UPDATE_IN_PROGRESS|ROLLBACK_IN_PROGRESS|UPDATE_ROLLBACK_IN_PROGRESS)
+      #           echo "Stack is in-progress ($STACK_STATUS). Please wait until complete."
+      #           echo "STACK_STATUS=IN_PROGRESS" >> $GITHUB_OUTPUT
+      #           ;;
+
+      #       # 3e. Any other state → treat as healthy if CREATE_COMPLETE, or manual fix otherwise
+      #       CREATE_COMPLETE)
+      #           echo "Stack is in CREATE_COMPLETE. Ready for operations."
+      #           echo "STACK_STATUS=READY_FOR_UPDATE" >> $GITHUB_OUTPUT
+      #           ;;
+      #       *)
+      #           echo "Encountered unhandled stack status: $STACK_STATUS"
+      #           echo "STACK_STATUS=UNKNOWN_STATE" >> $GITHUB_OUTPUT
+      #           ;;
+      #       esac
+
+
+      # - name: Check CloudFormation Stack and Recover on Failed Updates
+      #   id: stack_recovery
+      #   run: |
+      #       set -e
+
+      #       # 1. Does the stack exist? If not, proceed to initial create.
+      #       if ! aws cloudformation describe-stacks --stack-name ${{ env.STACK_NAME }} 2>/dev/null; then
+      #       echo "STACK_STATUS=NOT_EXIST" >> $GITHUB_OUTPUT
+      #       exit 0
+      #       fi
+
+      #       # 2. Retrieve current stack status
+      #       STACK_STATUS=$(aws cloudformation describe-stacks \
+      #       --stack-name ${{ env.STACK_NAME }} \
+      #       --query "Stacks[0].StackStatus" \
+      #       --output text)
+      #       echo "Current stack status: $STACK_STATUS"
+
+      #       case "$STACK_STATUS" in
+      #       # 3a. In UPDATE_ROLLBACK_FAILED → continue the rollback
+      #       UPDATE_ROLLBACK_FAILED)
+      #           echo "State is UPDATE_ROLLBACK_FAILED. Continuing rollback..."
+      #           aws cloudformation continue-update-rollback --stack-name ${{ env.STACK_NAME }}
+
+      #           echo "Waiting for rollback to complete..."
+      #           aws cloudformation wait stack-rollback-complete --stack-name ${{ env.STACK_NAME }}
+      #           echo "Rollback complete; stack is now in UPDATE_ROLLBACK_COMPLETE."
+      #           echo "STACK_STATUS=ROLLED_BACK" >> $GITHUB_OUTPUT
+      #           ;;
+
+      #       # 3b. In UPDATE_ROLLBACK_COMPLETE → stack is healthy; proceed to update
+      #       UPDATE_ROLLBACK_COMPLETE|UPDATE_COMPLETE|UPDATE_COMPLETE_CLEANUP_IN_PROGRESS)
+      #           echo "Stack is in a stable state ($STACK_STATUS). Ready for update."
+      #           echo "STACK_STATUS=READY_FOR_UPDATE" >> $GITHUB_OUTPUT
+      #           ;;
+
+      #       # 3c. In ROLLBACK_COMPLETE or CREATE_FAILED → unrecoverable without deletion
+      #       ROLLBACK_COMPLETE|CREATE_FAILED)
+      #           echo "Stack is in $STACK_STATUS; cannot update. Manual intervention required."
+      #           echo "STACK_STATUS=UNRECOVERABLE" >> $GITHUB_OUTPUT
+      #           ;;
+
+      #       # 3d. In CREATE_IN_PROGRESS, UPDATE_IN_PROGRESS, ROLLBACK_IN_PROGRESS etc. → wait or abort
+      #       CREATE_IN_PROGRESS|UPDATE_IN_PROGRESS|ROLLBACK_IN_PROGRESS|UPDATE_ROLLBACK_IN_PROGRESS)
+      #           echo "Stack is in-progress ($STACK_STATUS). Please wait until complete."
+      #           echo "STACK_STATUS=IN_PROGRESS" >> $GITHUB_OUTPUT
+      #           ;;
+
+      #       # 3e. Any other state → treat as healthy if CREATE_COMPLETE, or manual fix otherwise
+      #       CREATE_COMPLETE)
+      #           echo "Stack is in CREATE_COMPLETE. Ready for operations."
+      #           echo "STACK_STATUS=READY_FOR_UPDATE" >> $GITHUB_OUTPUT
+      #           ;;
+      #       *)
+      #           echo "Encountered unhandled stack status: $STACK_STATUS"
+      #           echo "STACK_STATUS=UNKNOWN_STATE" >> $GITHUB_OUTPUT
+      #           ;;
+      #       esac
+
+      
+      # - name: Check CloudFormation Stack and Recover on Failed Updates
+      #   id: stack_recovery
+      #   run: |
+      #       set -e
+
+      #       # 1. Does the stack exist? If not, proceed to initial create.
+      #       if ! aws cloudformation describe-stacks --stack-name ${{ env.STACK_NAME }} 2>/dev/null; then
+      #       echo "STACK_STATUS=NOT_EXIST" >> $GITHUB_OUTPUT
+      #       exit 0
+      #       fi
+
+      #       # 2. Retrieve current stack status
+      #       STACK_STATUS=$(aws cloudformation describe-stacks \
+      #       --stack-name ${{ env.STACK_NAME }} \
+      #       --query "Stacks[0].StackStatus" \
+      #       --output text)
+      #       echo "Current stack status: $STACK_STATUS"
+
+      #       case "$STACK_STATUS" in
+      #       # 3a. In UPDATE_ROLLBACK_FAILED → continue the rollback
+      #       UPDATE_ROLLBACK_FAILED)
+      #           echo "State is UPDATE_ROLLBACK_FAILED. Continuing rollback..."
+      #           aws cloudformation continue-update-rollback --stack-name ${{ env.STACK_NAME }}
+
+      #           echo "Waiting for rollback to complete..."
+      #           aws cloudformation wait stack-rollback-complete --stack-name ${{ env.STACK_NAME }}
+      #           echo "Rollback complete; stack is now in UPDATE_ROLLBACK_COMPLETE."
+      #           echo "STACK_STATUS=ROLLED_BACK" >> $GITHUB_OUTPUT
+      #           ;;
+
+      #       # 3b. In UPDATE_ROLLBACK_COMPLETE → stack is healthy; proceed to update
+      #       UPDATE_ROLLBACK_COMPLETE|UPDATE_COMPLETE|UPDATE_COMPLETE_CLEANUP_IN_PROGRESS)
+      #           echo "Stack is in a stable state ($STACK_STATUS). Ready for update."
+      #           echo "STACK_STATUS=READY_FOR_UPDATE" >> $GITHUB_OUTPUT
+      #           ;;
+
+      #       # 3c. In ROLLBACK_COMPLETE or CREATE_FAILED → unrecoverable without deletion
+      #       ROLLBACK_COMPLETE|CREATE_FAILED)
+      #           echo "Stack is in $STACK_STATUS; cannot update. Manual intervention required."
+      #           echo "STACK_STATUS=UNRECOVERABLE" >> $GITHUB_OUTPUT
+      #           ;;
+
+      #       # 3d. In CREATE_IN_PROGRESS, UPDATE_IN_PROGRESS, ROLLBACK_IN_PROGRESS etc. → wait or abort
+      #       CREATE_IN_PROGRESS|UPDATE_IN_PROGRESS|ROLLBACK_IN_PROGRESS|UPDATE_ROLLBACK_IN_PROGRESS)
+      #           echo "Stack is in-progress ($STACK_STATUS). Please wait until complete."
+      #           echo "STACK_STATUS=IN_PROGRESS" >> $GITHUB_OUTPUT
+      #           ;;
+
+      #       # 3e. Any other state → treat as healthy if CREATE_COMPLETE, or manual fix otherwise
+      #       CREATE_COMPLETE)
+      #           echo "Stack is in CREATE_COMPLETE. Ready for operations."
+      #           echo "STACK_STATUS=READY_FOR_UPDATE" >> $GITHUB_OUTPUT
+      #           ;;
+      #       *)
+      #           echo "Encountered unhandled stack status: $STACK_STATUS"
+      #           echo "STACK_STATUS=UNKNOWN_STATE" >> $GITHUB_OUTPUT
+      #           ;;
+      #       esac
+
+##################################################################################
+      - name: Check CloudFormation Stack and Recover on Failed Updates
+        run: |
+          set -euo pipefail
+
+          STACK_NAME="${{ env.STACK_NAME }}"
+
+          # 1. Does the stack exist? If not, proceed to initial create.
+          if ! aws cloudformation describe-stacks --stack-name "$STACK_NAME" 2>/dev/null; then
+            echo "STACK_STATUS=NOT_EXIST" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # 2. Retrieve the current stack status.
+          STACK_STATUS=$(aws cloudformation describe-stacks \
+            --stack-name "$STACK_NAME" \
+            --query "Stacks[0].StackStatus" \
+            --output text)
+          echo "Current stack status: $STACK_STATUS"
+
+          case "$STACK_STATUS" in
+            # 3a. In UPDATE_ROLLBACK_FAILED, attempt to continue rollback.
+            UPDATE_ROLLBACK_FAILED)
+              echo "State is UPDATE_ROLLBACK_FAILED. Gathering failed resources to skip..."
+
+              # 3a.i. List resources in UPDATE_FAILED state.
+              FAILED_RESOURCES=$(aws cloudformation describe-stack-events \
+                --stack-name "$STACK_NAME" \
+                --query "StackEvents[?ResourceStatus=='UPDATE_FAILED'].[LogicalResourceId]" \
+                --output text | tr '\t' ' ' | tr '\n' ' ' | awk '{$1=$1;print}')
+
+              if [ -z "$FAILED_RESOURCES" ]; then
+                echo "No explicit failed resources found; running continue-update-rollback without skips."
+                aws cloudformation continue-update-rollback --stack-name "$STACK_NAME"
+              else
+                echo "Skipping resources: $FAILED_RESOURCES"
+                aws cloudformation continue-update-rollback \
+                  --stack-name "$STACK_NAME" \
+                  --resources-to-skip $FAILED_RESOURCES
+              fi
+
+              echo "Waiting for UPDATE_ROLLBACK_COMPLETE..."
+              aws cloudformation wait stack-rollback-complete --stack-name "$STACK_NAME" || {
+                echo "Rollback did not complete cleanly; please check stuck resources."
+                echo "STACK_STATUS=ROLLBACK_FAILED" >> $GITHUB_OUTPUT
+                exit 1
+              }
+
+              echo "Rollback complete; stack is now in UPDATE_ROLLBACK_COMPLETE."
+              echo "STACK_STATUS=READY_FOR_UPDATE" >> $GITHUB_OUTPUT
+              ;;
+
+            # 3b. Healthy or already rolled back: proceed.
+            UPDATE_ROLLBACK_COMPLETE|UPDATE_COMPLETE|UPDATE_COMPLETE_CLEANUP_IN_PROGRESS|CREATE_COMPLETE)
+              echo "Stack is in stable state ($STACK_STATUS). Ready for update."
+              echo "STACK_STATUS=READY_FOR_UPDATE" >> $GITHUB_OUTPUT
+              ;;
+
+            # 3c. In-progress states—abort the job (or wait externally).
+            CREATE_IN_PROGRESS|UPDATE_IN_PROGRESS|ROLLBACK_IN_PROGRESS|UPDATE_ROLLBACK_IN_PROGRESS)
+              echo "Stack is in-progress ($STACK_STATUS). Please wait until completion."
+              echo "STACK_STATUS=IN_PROGRESS" >> $GITHUB_OUTPUT
+              exit 1
+              ;;
+
+            # 3d. Irrecoverable states—require manual deletion or intervention.
+            ROLLBACK_COMPLETE|CREATE_FAILED)
+              echo "Stack is in $STACK_STATUS; cannot update. Manual intervention required."
+              echo "STACK_STATUS=UNRECOVERABLE" >> $GITHUB_OUTPUT
+              exit 1
+              ;;
+
+            # 3e. Any other state—flag as unknown.
+            *)
+              echo "Encountered unhandled stack status: $STACK_STATUS"
+              echo "STACK_STATUS=UNKNOWN_STATE" >> $GITHUB_OUTPUT
+              exit 1
+              ;;
+          esac
+#########################################################
