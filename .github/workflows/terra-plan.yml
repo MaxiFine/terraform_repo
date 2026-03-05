@@ -131,23 +131,33 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Terraform Format Check
-        run: terraform fmt -check
+        run: |
+          echo "🔧 FORMAT CHECK JOB STARTED"
+          terraform fmt -check
+          echo "✅ FORMAT CHECK JOB COMPLETED"
 
       - name: Terraform Validate
-        run: terraform validate
+        run: |
+          echo "🔍 VALIDATE JOB STARTED"
+          terraform validate
+          echo "✅ VALIDATE JOB COMPLETED"
 
       - name: Terraform Init
         run: |
+          echo "🚀 INIT JOB STARTED"
           terraform init \
             -backend-config="bucket=$TF_S3_BUCKET" \
             -backend-config="key=terraform.tfstate" \
             -backend-config="region=$AWS_REGION" \
             -backend-config="dynamodb_table=$TF_DYNAMO_DB_TABLE"
+          echo "✅ INIT JOB COMPLETED"
 
       - name: Terraform Plan
         id: plan
         run: |
+          echo "📝 PLAN JOB STARTED"
           terraform plan -no-color -out=tfplan
+          echo "✅ PLAN JOB COMPLETED"
 
       - name: Upload Plan Artifact
         uses: actions/upload-artifact@v4
@@ -155,4 +165,3 @@ jobs:
           name: terraform-plan
           path: ./lab-work-2/tfplan
 
-          
