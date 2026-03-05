@@ -1,6 +1,6 @@
 terraform {
 
- # Backend configuration for storing Terraform state
+  # Backend configuration for storing Terraform state
   # backend "s3" {
   #   bucket         = "mx-tf-state-bucket-dev"
   #   key            = "terraform.tfstate"
@@ -11,12 +11,12 @@ terraform {
 
   backend "s3" {}
 
-    required_providers {
-        aws = {
-            source  = "hashicorp/aws"
-            version = "~> 3.0"
-        }
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 3.0"
     }
+  }
 }
 
 provider "aws" {
@@ -24,7 +24,7 @@ provider "aws" {
 }
 
 module "s3" {
-  source = "./s3"
+  source      = "./s3"
   bucket_name = var.bucket_name
-  
+
 }

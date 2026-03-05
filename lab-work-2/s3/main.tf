@@ -1,13 +1,13 @@
 
 #   S3 BUCKET CREATION
 resource "aws_s3_bucket" "mx-bucket" {
-    bucket = var.bucket_name
+  bucket = var.bucket_name
 
 }
 
 # S3 BUCKET ACCESS CONFIGURATION
 resource "aws_s3_bucket_public_access_block" "mx-bucket" {
-  bucket = aws_s3_bucket.mx-bucket.id
+  bucket                  = aws_s3_bucket.mx-bucket.id
   block_public_acls       = false
   block_public_policy     = false
   ignore_public_acls      = false
@@ -25,21 +25,21 @@ resource "aws_s3_bucket_public_access_block" "mx-bucket" {
 # USING OPTIMIZED CODES
 # local vars to store the objects
 locals {
-  
+
   s3_objects = {
     index = {
-      key = "index.html"
-      source = "${path.root}/index.html"
+      key          = "index.html"
+      source       = "${path.root}/index.html"
       content_type = "text/html"
     }
     error = {
-      key = "error.html"
-      source = "${path.root}/error.html"
+      key          = "error.html"
+      source       = "${path.root}/error.html"
       content_type = "text/html"
     }
     about = {
-      key = "about.html"
-      source = "${path.root}/about.html"
+      key          = "about.html"
+      source       = "${path.root}/about.html"
       content_type = "text/html"
     }
   }
@@ -48,10 +48,10 @@ locals {
 
 # s3 Objects created using for_each 
 resource "aws_s3_bucket_object" "s3_objects" {
-  for_each = local.s3_objects
-  bucket = aws_s3_bucket.mx-bucket.id
-  key    = each.value.key
-  source = each.value.source
+  for_each     = local.s3_objects
+  bucket       = aws_s3_bucket.mx-bucket.id
+  key          = each.value.key
+  source       = each.value.source
   content_type = each.value.content_type
 }
 
