@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sudoku</title>
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- CloudWatch RUM -->
+    <script>
+    (function(n,i,v,r,s,c,x,z){x=window.AwsRumClient={q:[],n:n,i:i,v:v,r:r,c:c};window[n]=function(c,p){x.q.push({c:c,p:p});};z=document.createElement('script');z.async=true;z.src=s;document.head.insertBefore(z,document.head.getElementsByTagName('script')[0]);})(
+      'cwr',
+      'RUM_APP_MONITOR_ID',
+      '1.0.0',
+      'us-east-1',
+      'https://client.rum.us-east-1.amazonaws.com/1.x/cwr.js',
+      {
+        sessionSampleRate: 1,
+        identityPoolId: 'RUM_IDENTITY_POOL_ID',
+        endpoint: 'https://dataplane.rum.us-east-1.amazonaws.com',
+        telemetries: ['errors','performance','http'],
+        allowCookies: true,
+        enableXRay: true
+      }
+    );
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1>Sudoku</h1>
+        <div class="info-panel">
+            <div class="info-card">
+                <div class="info-label">Difficulty</div>
+                <div class="info-value" id="difficulty">Medium</div>
+            </div>
+            <div class="info-card">
+                <div class="info-label">Time</div>
+                <div class="info-value" id="timer">00:00</div>
+            </div>
+            <div class="info-card">
+                <div class="info-label">Mistakes</div>
+                <div class="info-value" id="mistakes">0</div>
+            </div>
+            <div class="info-card">
+                <div class="info-label">Progress</div>
+                <div class="info-value" id="progress">0%</div>
+            </div>
+        </div>
+        <div id="grid"></div>
+        <div class="controls">
+            <button onclick="newGame('easy')">Easy</button>
+            <button onclick="newGame('medium')">Medium</button>
+            <button onclick="newGame('hard')">Hard</button>
+            <button onclick="checkSolution()">Check</button>
+        </div>
+    </div>
+    <script type="module" src="game.js"></script>
+</body>
+</html>
