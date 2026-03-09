@@ -1,0 +1,7 @@
+# Example with custom domain
+domain_name      = "sudoku.example.com"
+route53_zone_id  = "Z1234567890ABC"
+
+# Or leave empty for CloudFront default domain
+# domain_name      = ""
+# route53_zone_id  = ""

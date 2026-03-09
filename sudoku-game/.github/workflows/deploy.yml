@@ -1,0 +1,88 @@
+name: Deploy Sudoku App
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  AWS_REGION: us-east-1
+  TF_VERSION: 1.9.0
+
+jobs:
+  deploy:
+    name: Deploy to AWS
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Terraform Init
+        working-directory: terraform
+        run: terraform init
+
+      - name: Terraform Plan
+        working-directory: terraform
+        run: terraform plan -out=tfplan
+
+      - name: Terraform Apply
+        working-directory: terraform
+        run: terraform apply -auto-approve tfplan
+
+      - name: Get S3 bucket name
+        id: bucket
+        working-directory: terraform
+        run: echo "name=$(terraform output -raw s3_bucket_name)" >> $GITHUB_OUTPUT
+
+      - name: Get CloudFront distribution ID
+        id: cloudfront
+        working-directory: terraform
+        run: echo "id=$(terraform output -raw cloudfront_distribution_id)" >> $GITHUB_OUTPUT
+
+      - name: Deploy files to S3
+        run: |
+          # Get RUM configuration
+          RUM_APP_ID=$(cd terraform && terraform output -raw rum_app_monitor_id || echo "")
+          RUM_POOL_ID=$(cd terraform && terraform output -raw rum_identity_pool_id || echo "")
+          
+          # Update index.html with RUM IDs if monitoring is enabled
+          if [ -n "$RUM_APP_ID" ] && [ "$RUM_APP_ID" != "null" ]; then
+            sed -i "s/RUM_APP_MONITOR_ID/$RUM_APP_ID/g" index.html
+            sed -i "s/RUM_IDENTITY_POOL_ID/$RUM_POOL_ID/g" index.html
+          fi
+          
+          aws s3 cp index.html s3://${{ steps.bucket.outputs.name }}/ --content-type "text/html"
+          aws s3 cp style.css s3://${{ steps.bucket.outputs.name }}/ --content-type "text/css"
+          aws s3 cp game.js s3://${{ steps.bucket.outputs.name }}/ --content-type "application/javascript"
+          aws s3 cp engine.js s3://${{ steps.bucket.outputs.name }}/ --content-type "application/javascript"
+          aws s3 cp state.js s3://${{ steps.bucket.outputs.name }}/ --content-type "application/javascript"
+          aws s3 cp ui.js s3://${{ steps.bucket.outputs.name }}/ --content-type "application/javascript"
+
+      - name: Invalidate CloudFront cache
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id ${{ steps.cloudfront.outputs.id }} \
+            --paths "/*" \
+            --no-cli-pager
+
+      - name: Get website URL
+        working-directory: terraform
+        run: |
+          echo "🚀 Deployment complete!"
+          echo "Website URL: $(terraform output -raw website_url)"
