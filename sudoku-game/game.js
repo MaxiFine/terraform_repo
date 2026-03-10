@@ -5,6 +5,8 @@ import SudokuUI from './ui.js';
 
 class SudokuGame {
     constructor() {
+        this.themeStorageKey = 'sudoku-theme';
+        this.themeToggleButton = document.getElementById('theme-toggle');
         this.engine = new SudokuEngine();
         this.state = new SudokuState();
         this.ui = new SudokuUI(
@@ -22,6 +24,8 @@ class SudokuGame {
 
     init() {
         try {
+            this.initializeTheme();
+
             if (!this.state.load()) {
                 this.newGame();
             } else {
@@ -30,6 +34,30 @@ class SudokuGame {
         } catch (e) {
             console.error('Initialization failed:', e);
             this.newGame();
+        }
+    }
+
+    initializeTheme() {
+        const savedTheme = localStorage.getItem(this.themeStorageKey) || 'light';
+        this.applyTheme(savedTheme);
+
+        if (this.themeToggleButton) {
+            this.themeToggleButton.onclick = () => this.toggleTheme();
+        }
+    }
+
+    toggleTheme() {
+        const isDark = document.body.classList.contains('dark-theme');
+        this.applyTheme(isDark ? 'light' : 'dark');
+    }
+
+    applyTheme(theme) {
+        const useDark = theme === 'dark';
+        document.body.classList.toggle('dark-theme', useDark);
+        localStorage.setItem(this.themeStorageKey, useDark ? 'dark' : 'light');
+
+        if (this.themeToggleButton) {
+            this.themeToggleButton.textContent = useDark ? 'Light Theme' : 'Dark Theme';
         }
     }
 
