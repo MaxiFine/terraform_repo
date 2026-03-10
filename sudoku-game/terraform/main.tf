@@ -7,7 +7,7 @@ terraform {
       version = "~> 5.0"
     }
   }
-
+# ADD DARK THEEME TO GAME
   # Uncomment to use S3 backend for state storage
   # backend "s3" {
   #   bucket         = "your-terraform-state-bucket"
